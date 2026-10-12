@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Conquer Vocab">
+<meta name="theme-color" content="#FBFCFE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15172A" media="(prefers-color-scheme: dark)">
+<meta name="description" content="American English vocabulary with spaced review, pronunciation and spelling practice. Meanings in Vietnamese.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Conquer Vocab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBFCFE;--sheet:#FFFFFF;--grid:rgba(91,110,170,.07);--grid2:rgba(91,110,170,.14);
+  --margin:#EFA9A3;--ink:#1E2238;--soft:#5E6480;--faint:#979DB5;--line:#DDE2EE;
+  --tim:#5B3CC4;--tim2:#43299E;--timbg:#EFEAFD;
+  --ok:#1F7F55;--okbg:#E2F3EA;--bad:#C93F34;--badbg:#FBE9E7;
+  --l1:#E4574B;--l2:#EE8A3A;--l3:#D9A91A;--l4:#2F9A76;--l5:#5B3CC4;
+  --ui:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --book:'Newsreader',Georgia,'Times New Roman',serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#15172A;--sheet:#1D2036;--grid:rgba(160,170,230,.05);--grid2:rgba(160,170,230,.09);
+  --margin:#8E4A55;--ink:#ECEDF6;--soft:#AEB2CC;--faint:#7C8099;--line:#2F3350;
+  --tim:#9D86F2;--tim2:#6F57C9;--timbg:#2A2550;--ok:#5CCB98;--okbg:#17362B;--bad:#F07B70;--badbg:#3D1F22;
+}}
+:root[data-theme="dark"]{
+  --paper:#15172A;--sheet:#1D2036;--grid:rgba(160,170,230,.05);--grid2:rgba(160,170,230,.09);
+  --margin:#8E4A55;--ink:#ECEDF6;--soft:#AEB2CC;--faint:#7C8099;--line:#2F3350;
+  --tim:#9D86F2;--tim2:#6F57C9;--timbg:#2A2550;--ok:#5CCB98;--okbg:#17362B;--bad:#F07B70;--badbg:#3D1F22;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{
+  background-color:var(--paper);color:var(--ink);font-family:var(--ui);font-size:16px;line-height:1.5;
+  background-image:linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px),linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px,32px 32px,8px 8px,8px 8px;-webkit-tap-highlight-color:transparent;min-height:100vh;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--tim);outline-offset:2px;border-radius:8px}
+.app{max-width:520px;margin:0 auto;padding:12px 16px 110px}
+header.top{display:flex;align-items:baseline;justify-content:space-between;padding:10px 2px 14px}
+.brand{font-family:var(--book);font-weight:600;font-size:28px;color:var(--tim);letter-spacing:-.01em}
+.streak{font-size:14px;color:var(--soft);font-weight:500}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:16px;position:relative;padding:18px 18px 18px 34px;margin-bottom:16px}
+.sheet::before{content:"";position:absolute;left:20px;top:0;bottom:0;width:1.5px;background:var(--margin)}
+h2{font-size:17px;font-weight:600;margin:4px 0 10px}
+.lead{font-size:18px;margin:0 0 14px;line-height:1.45}
+.lead b{color:var(--tim)}
+.hint{color:var(--soft);font-size:14px;margin:6px 0 0}
+.btn{border:0;border-radius:14px;padding:13px 18px;min-height:50px;font-weight:600;font-size:16px;transition:transform .08s}
+.btn:active{transform:translateY(2px)}
+.btn-primary{background:var(--tim);color:#fff;box-shadow:0 3px 0 var(--tim2)}
+.btn-primary:active{box-shadow:0 1px 0 var(--tim2)}
+.btn-ghost{background:var(--sheet);border:1.5px solid var(--line);box-shadow:0 3px 0 var(--line)}
+.btn-ghost:active{box-shadow:0 1px 0 var(--line)}
+.btn:disabled{opacity:.5}
+.wide{width:100%}
+.levels{display:flex;gap:10px;align-items:flex-end;height:132px;padding-top:6px}
+.lv{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.lv .n{font-weight:600;font-size:14px}
+.lv .bar{width:100%;max-width:42px;border-radius:8px 8px 4px 4px;min-height:6px;transition:height .4s}
+.lv .t{font-size:12px;color:var(--soft)}
+.b1{background:var(--l1)}.b2{background:var(--l2)}.b3{background:var(--l3)}.b4{background:var(--l4)}.b5{background:var(--l5)}
+.meta{display:flex;justify-content:space-between;color:var(--soft);font-size:13px;margin-top:10px}
+.topic{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.topic:first-of-type{border-top:0}
+.topic .ic{font-size:26px;width:34px;text-align:center}
+.topic .tx{flex:1;min-width:0}
+.topic .nm{font-weight:600}
+.topic .pg{font-size:13px;color:var(--soft)}
+.track{height:5px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--tim);border-radius:3px}
+.topic .btn{min-height:40px;padding:8px 14px;font-size:14px}
+.tip{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--soft)}
+.tip button{background:none;border:0;color:var(--tim);font-weight:600;padding:4px 0;white-space:nowrap}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
+nav.tabs .in{display:flex;max-width:520px;width:100%}
+nav.tabs button{flex:1;background:none;border:0;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:500;color:var(--faint)}
+nav.tabs button[aria-current="page"]{color:var(--tim)}
+nav.tabs svg{width:24px;height:24px}
+.say{width:44px;height:44px;border-radius:50%;border:0;background:var(--timbg);color:var(--tim);display:inline-grid;place-items:center;flex:none}
+.say svg{width:22px;height:22px}
+.say.sm{width:36px;height:36px}.say.sm svg{width:18px;height:18px}
+.search{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--sheet);font-size:16px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}
+.chip{border:1.5px solid var(--line);background:var(--sheet);border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--tim);border-color:var(--tim);color:#fff}
+.row{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .rw{flex:1;min-width:0}
+.row .w{font-family:var(--book);font-weight:600;font-size:19px}
+.ipa{color:var(--soft);font-size:14px}
+.row .vi{font-size:14px}
+.row .ex{font-family:var(--book);font-style:italic;color:var(--soft);font-size:15px;margin-top:4px}
+.badge{font-size:12px;font-weight:600;border-radius:6px;padding:2px 7px;color:#fff;flex:none;margin-top:4px}
+.badge.b0{background:var(--line);color:var(--soft)}
+.badge.bk{background:var(--okbg);color:var(--ok)}
+label.f{display:block;font-size:14px;font-weight:500;margin:10px 0 4px}
+.f+input,.inp{width:100%;padding:11px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);font-size:16px}
+details summary{cursor:pointer;font-weight:600;color:var(--tim);list-style:none;padding:4px 0}
+details summary::-webkit-details-marker{display:none}
+.btns{display:flex;gap:10px;margin-top:14px}
+.btns .btn{flex:1}
+.set{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.set:first-of-type{border-top:0}
+.set .d{font-size:13px;color:var(--soft)}
+select.inp{width:auto;max-width:60%}
+input[type=range]{accent-color:var(--tim);width:140px}
+.empty{color:var(--soft);text-align:center;padding:20px 0}
+textarea.inp{display:block;box-sizing:border-box;min-height:76px;resize:vertical;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;line-height:1.35;word-break:break-all;color:var(--ink)}
+#codeOut{font-size:13px;color:var(--soft);margin-top:8px}
+#codebox{margin-top:10px}
+/* session */
+.session{position:fixed;inset:0;z-index:20;background:inherit;background-color:var(--paper);background-image:inherit;background-size:inherit;overflow-y:auto;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.session .in{max-width:520px;margin:0 auto;padding:12px 16px 200px;min-height:100%}
+.sbar{display:flex;align-items:center;gap:12px;padding:6px 0 16px}
+.x{width:40px;height:40px;border-radius:50%;border:0;background:none;color:var(--soft);display:grid;place-items:center}
+.x svg{width:24px;height:24px}
+.prog{flex:1;height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--tim);border-radius:6px;transition:width .3s}
+.card{text-align:center;padding:26px 18px 22px 34px}
+.emo{font-size:64px;line-height:1.1;margin-bottom:6px}
+.word{font-family:var(--book);font-weight:600;font-size:40px;line-height:1.1;color:var(--tim);margin:4px 0;word-break:break-word}
+.word.md{font-size:32px}
+.type{display:inline-block;font-size:12px;color:var(--soft);border:1px solid var(--line);border-radius:6px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.sayrow{display:flex;justify-content:center;gap:10px;margin:14px 0}
+.mean{font-size:20px;font-weight:600;margin:10px 0 4px}
+.exbox{font-family:var(--book);font-style:italic;font-size:18px;line-height:1.55;color:var(--ink);display:flex;gap:10px;align-items:flex-start;text-align:left;border-top:1px dashed var(--line);padding-top:14px;margin-top:14px}
+.exbox .say{margin-top:2px}
+.row .ex mark,.fx mark{background:var(--timbg);color:var(--tim);font-style:normal;font-weight:600;border-radius:4px;padding:0 3px}
+.armed{background:var(--bad)!important;border-color:var(--bad)!important;color:#fff!important;box-shadow:none!important}
+.exbox mark{background:var(--timbg);color:var(--tim);font-style:normal;font-weight:600;border-radius:4px;padding:0 3px}
+.q{font-size:14px;color:var(--soft);margin:0 0 10px;text-align:center}
+.bigsay{width:96px;height:96px;margin:10px auto}
+.bigsay svg{width:44px;height:44px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{text-align:left;padding:14px 16px;min-height:54px;border-radius:14px;border:1.5px solid var(--line);background:var(--sheet);box-shadow:0 3px 0 var(--line);font-size:16px;font-weight:500}
+.opt.en{font-family:var(--book);font-size:19px;font-weight:600}
+.opt.right{background:var(--okbg);border-color:var(--ok);box-shadow:0 3px 0 var(--ok);color:var(--ok)}
+.opt.wrong{background:var(--badbg);border-color:var(--bad);box-shadow:0 3px 0 var(--bad);color:var(--bad)}
+.blank{font-family:var(--book);font-style:italic;font-size:21px;line-height:1.55;text-align:left}
+.blank u{text-decoration:none;display:inline-block;min-width:80px;border-bottom:2px solid var(--tim);font-style:normal}
+.typein{width:100%;font-family:var(--book);font-size:24px;padding:14px;border-radius:14px;border:2px solid var(--line);background:var(--sheet);text-align:center}
+.typein:focus{border-color:var(--tim);outline:none}
+.hintw{letter-spacing:.3em;color:var(--faint);font-family:var(--book);font-size:20px;text-align:center;margin:8px 0}
+.mic{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--sheet);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;color:var(--ink)}
+.mic svg{width:18px;height:18px;color:var(--tim)}
+.mic.on{border-color:var(--bad);color:var(--bad)}
+#micout{font-size:14px;margin-top:8px;min-height:21px}
+.fb{position:fixed;left:0;right:0;bottom:0;z-index:30;transform:translateY(105%);transition:transform .22s ease-out;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.fb.show{transform:none}
+.fb.ok{background:var(--okbg)}.fb.bad{background:var(--badbg)}
+.fb .in2{max-width:520px;margin:0 auto}
+.fb .vt{font-weight:700;font-size:18px;margin-bottom:6px}
+.fb.ok .vt{color:var(--ok)}.fb.bad .vt{color:var(--bad)}
+.fb .fw{display:flex;align-items:center;gap:10px}
+.fb .fw .w{font-family:var(--book);font-weight:600;font-size:22px}
+.fb .fx{font-family:var(--book);font-style:italic;color:var(--soft);margin:6px 0 12px;font-size:16px}
+.fb.ok .btn{background:var(--ok);box-shadow:0 3px 0 #145A3C;color:#fff}
+.fb.bad .btn{background:var(--bad);box-shadow:0 3px 0 #8E2A22;color:#fff}
+.foot{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--paper) 30%);z-index:25}
+.foot .in2{max-width:520px;margin:0 auto;display:flex;gap:10px}
+.foot .btn{flex:1}
+.done h1{font-family:var(--book);font-weight:600;font-size:32px;color:var(--tim);margin:6px 0 8px}
+.timer{font-weight:700;font-variant-numeric:tabular-nums;color:var(--tim);min-width:52px;text-align:right;font-size:17px}
+.timer.okt{color:var(--ok)}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:90%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<nav class="tabs" id="tabs"><div class="in">
+  <button data-act="go" data-v="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M9 8h6"/></svg>Learn</button>
+  <button data-act="go" data-v="bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Words</button>
+  <button data-act="go" data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Settings</button>
+</div></nav>
+<div id="sess"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+let view='home',bankQ='',bankF='all',sess=null;
+/* ============ WORD LIST (American English) ============
+   One entry per line: word | IPA (General American) | part of speech | Vietnamese meaning | example sentence | emoji */
+const TOPICS_RAW = [
+{id:'nha',name:'Home & Tools',icon:'🧰',list:`
+shovel|ˈʃʌvəl|noun|cái xẻng (xúc đất)|He grabbed a shovel and dug a hole for the new tree.|
+rake|reɪk|noun|cái cào (cào lá, cỏ)|She used a rake to gather the fallen leaves.|🍂
+hoe|hoʊ|noun|cái cuốc|Grandpa loosened the soil with an old hoe.|
+trowel|ˈtraʊəl|noun|cái xẻng nhỏ làm vườn; cái bay|She planted the bulbs with a small trowel.|
+wheelbarrow|ˈwilˌbɛroʊ|noun|xe cút kít|We moved the bricks in a wheelbarrow.|
+watering can|ˈwɔtərɪŋ ˌkæn|noun|bình tưới cây|Fill the watering can and water the tomatoes.|🪴
+hose|hoʊz|noun|ống nước tưới vườn|The kids sprayed each other with the hose.|
+lawn mower|ˈlɔn ˌmoʊər|noun|máy cắt cỏ|Dad starts the lawn mower every Saturday morning.|
+ladder|ˈlædər|noun|cái thang|Hold the ladder while I change the light bulb.|🪜
+pliers|ˈplaɪərz|noun|cái kìm|Use the pliers to bend the wire.|
+wrench|rɛntʃ|noun|cờ lê|He tightened the bolt with a wrench.|🔧
+screwdriver|ˈskruˌdraɪvər|noun|tua vít|I need a screwdriver to open the battery cover.|🪛
+tape measure|ˈteɪp ˌmɛʒər|noun|thước dây|Check the width with a tape measure first.|📏
+bucket|ˈbʌkɪt|noun|cái xô|She filled a bucket with soapy water.|🪣
+broom|brum|noun|cái chổi|Grab the broom and sweep the kitchen.|🧹
+dustpan|ˈdʌstˌpæn|noun|cái hốt rác|Sweep the crumbs into the dustpan.|
+mop|mɑp|noun, verb|cây lau nhà; lau nhà|Careful, I just used the mop and the floor is wet.|
+sponge|spʌndʒ|noun|miếng bọt biển rửa chén|Wipe the counter with a damp sponge.|🧽
+clothespin|ˈkloʊzˌpɪn|noun|cái kẹp phơi đồ|Hang the shirts on the line with a clothespin.|
+faucet|ˈfɔsɪt|noun|vòi nước (bồn rửa)|Don't leave the faucet running.|🚰
+drain|dreɪn|noun|lỗ thoát nước|Hair keeps clogging the shower drain.|
+gutter|ˈɡʌtər|noun|máng xối; rãnh nước ven đường|Leaves clogged the gutter after the storm.|
+attic|ˈætɪk|noun|gác mái|We found old photos in a box in the attic.|
+basement|ˈbeɪsmənt|noun|tầng hầm|The washing machine is down in the basement.|
+porch|pɔrtʃ|noun|hiên nhà|They sat on the porch and watched the rain.|
+doorknob|ˈdɔrˌnɑb|noun|tay nắm cửa|The doorknob is loose again.|
+hinge|hɪndʒ|noun|bản lề|The door creaks because the hinge needs oil.|
+outlet|ˈaʊtˌlɛt|noun|ổ cắm điện|Plug your charger into the outlet by the bed.|🔌
+drawer|drɔr|noun|ngăn kéo|The scissors are in the top drawer.|
+cupboard|ˈkʌbərd|noun|tủ chén, tủ đựng đồ|Put the plates back in the cupboard.|
+dresser|ˈdrɛsər|noun|tủ ngăn kéo đựng quần áo|Her socks are in the dresser.|
+pillowcase|ˈpɪloʊˌkeɪs|noun|vỏ gối|Change the pillowcase once a week.|
+trash can|ˈtræʃ ˌkæn|noun|thùng rác|Take the trash can out to the curb tonight.|🗑️
+curb|kɝb|noun|lề đường|Park close to the curb.|
+`},
+{id:'rau',name:'Fruits, Veggies & Herbs',icon:'🥬',list:`
+scallion|ˈskæljən|noun|hành lá|Sprinkle a chopped scallion over the soup.|
+cilantro|sɪˈlɑntroʊ|noun|rau mùi, ngò|Some people think cilantro tastes like soap.|🌿
+basil|ˈbeɪzəl|noun|húng quế|Add fresh basil at the very end.|
+mint|mɪnt|noun|rau húng, bạc hà|Pho comes with mint and bean sprouts on the side.|
+bean sprouts|ˈbin ˌspraʊts|noun|giá đỗ|Toss a handful of bean sprouts into the bowl.|
+water spinach|ˈwɔtər ˌspɪnɪtʃ|noun|rau muống|Stir-fried water spinach with garlic is my favorite.|
+bok choy|ˌbɑk ˈtʃɔɪ|noun|cải thìa|Steam the bok choy for two minutes.|🥬
+mustard greens|ˈmʌstərd ˌɡrinz|noun|cải bẹ xanh|Grandma pickles mustard greens every spring.|
+lettuce|ˈlɛtɪs|noun|xà lách|Wrap the meat in a lettuce leaf.|🥬
+cabbage|ˈkæbɪdʒ|noun|bắp cải|She shredded the cabbage for the salad.|
+cauliflower|ˈkɔləˌflaʊər|noun|súp lơ trắng|Roast the cauliflower until it's golden.|
+eggplant|ˈɛɡˌplænt|noun|cà tím|Grilled eggplant with scallion oil is delicious.|🍆
+zucchini|zuˈkini|noun|bí ngòi|Slice the zucchini into thin rounds.|
+squash|skwɑʃ|noun|bí (các loại bí)|We made soup from a butternut squash.|🎃
+bitter melon|ˈbɪtər ˌmɛlən|noun|khổ qua, mướp đắng|My mom says bitter melon soup cools you down.|
+okra|ˈoʊkrə|noun|đậu bắp|Okra gets slimy if you overcook it.|
+green beans|ˈɡrin ˌbinz|noun|đậu que|Snap the ends off the green beans.|🫛
+bell pepper|ˈbɛl ˌpɛpər|noun|ớt chuông|Dice a red bell pepper.|🫑
+radish|ˈrædɪʃ|noun|củ cải đỏ (loại nhỏ)|The radish added a peppery crunch.|
+daikon|ˈdaɪkən|noun|củ cải trắng|Pickled daikon and carrot go in banh mi.|
+celery|ˈsɛləri|noun|cần tây|Chop two stalks of celery.|
+asparagus|əˈspɛrəɡəs|noun|măng tây|Grill the asparagus with a little olive oil.|
+ginger|ˈdʒɪndʒər|noun|gừng|Grate some fresh ginger into the tea.|🫚
+turmeric|ˈtɝmərɪk|noun|nghệ|Turmeric stains everything yellow.|
+lemongrass|ˈlɛmənˌɡræs|noun|sả|Bruise the lemongrass before you add it.|
+shallot|ˈʃælət|noun|hành tím|Fry the shallot until it turns crispy.|🧅
+garlic clove|ˈɡɑrlɪk ˌkloʊv|noun|tép tỏi|Mince one garlic clove.|🧄
+taro|ˈtɛroʊ|noun|khoai môn|Taro bubble tea is naturally purple.|
+sweet potato|ˈswit pəˌteɪtoʊ|noun|khoai lang|She roasted a sweet potato for breakfast.|🍠
+cassava|kəˈsɑvə|noun|khoai mì, sắn|Steamed cassava with coconut is a classic snack.|
+corn on the cob|ˌkɔrn ɑn ðə ˈkɑb|noun|bắp nguyên trái|We grilled corn on the cob at the park.|🌽
+mushroom|ˈmʌʃrum|noun|nấm|Slice each mushroom thin.|🍄
+lotus root|ˈloʊtəs ˌrut|noun|củ sen|Lotus root has holes like a wheel.|
+jackfruit|ˈdʒækˌfrut|noun|mít|Jackfruit smells strong but tastes sweet.|
+durian|ˈdʊriən|noun|sầu riêng|You either love durian or you hate it.|
+longan|ˈlɔŋɡən|noun|nhãn|She bought a bag of longan at the market.|
+lychee|ˈlitʃi|noun|vải|Peel the lychee and spit out the seed.|
+rambutan|ræmˈbutən|noun|chôm chôm|A rambutan looks like a tiny hairy ball.|
+dragon fruit|ˈdræɡən ˌfrut|noun|thanh long|Dragon fruit is pink outside and white inside.|🐉
+guava|ˈɡwɑvə|noun|ổi|Dip the guava in chili salt.|
+persimmon|pərˈsɪmən|noun|quả hồng|A ripe persimmon is soft and very sweet.|
+pomegranate|ˈpɑmɪˌɡrænɪt|noun|quả lựu|Pomegranate juice stains your fingers.|
+starfruit|ˈstɑrˌfrut|noun|quả khế|Sliced starfruit looks like little stars.|⭐
+tangerine|ˌtændʒəˈrin|noun|quả quýt|She peeled a tangerine on the bus.|🍊
+papaya|pəˈpaɪə|noun|đu đủ|Green papaya salad is crunchy and sour.|
+`},
+{id:'bep',name:'Kitchen & Cooking',icon:'🍳',list:`
+ladle|ˈleɪdəl|noun|cái vá, cái muôi|Use the ladle to serve the soup.|
+spatula|ˈspætʃələ|noun|cái xẻng lật đồ chiên|Flip the pancake with a spatula.|
+tongs|tɔŋz|noun|cái kẹp gắp|Turn the meat over with tongs.|
+whisk|wɪsk|noun, verb|cây đánh trứng; đánh (trứng)|Whisk the eggs until they're foamy.|
+colander|ˈkɑləndər|noun|cái rổ để ráo nước|Drain the noodles in a colander.|
+strainer|ˈstreɪnər|noun|cái rây, lưới lọc|Pour the broth through a strainer.|
+cutting board|ˈkʌtɪŋ ˌbɔrd|noun|cái thớt|Wash the cutting board after cutting raw meat.|
+peeler|ˈpilər|noun|dao bào vỏ|Peel the carrots with a peeler.|🥕
+grater|ˈɡreɪtər|noun|cái bào (phô mai, gừng)|Grate the cheese with a grater.|🧀
+rolling pin|ˈroʊlɪŋ ˌpɪn|noun|cây cán bột|Flatten the dough with a rolling pin.|
+pot holder|ˈpɑt ˌhoʊldər|noun|miếng lót nhấc nồi|Use a pot holder, the handle is hot.|
+apron|ˈeɪprən|noun|tạp dề|Put on an apron so you don't get stains.|
+leftovers|ˈlɛftˌoʊvərz|noun|đồ ăn thừa|We had leftovers for lunch.|
+crumbs|krʌmz|noun|vụn bánh|There are crumbs all over the couch.|
+simmer|ˈsɪmər|verb|đun liu riu|Let the broth simmer for three hours.|🍲
+marinate|ˈmɛrəˌneɪt|verb|ướp (thịt)|Marinate the pork overnight.|
+stir-fry|ˈstɝ ˌfraɪ|verb, noun|xào; món xào|Stir-fry the beef with onions.|
+mince|mɪns|verb|băm nhỏ|Mince the garlic as fine as you can.|
+drizzle|ˈdrɪzəl|verb|rưới một ít|Drizzle a little fish sauce on top.|
+stale|steɪl|adj|cũ, bị cứng (bánh mì)|The bread went stale overnight.|🥖
+soggy|ˈsɑɡi|adj|bị ỉu, sũng nước|The fries got soggy in the bag.|
+bland|blænd|adj|nhạt nhẽo, thiếu vị|The soup is a little bland.|
+`},
+{id:'nguoi',name:'Body & Health',icon:'🫀',list:`
+eyebrow|ˈaɪˌbraʊ|noun|lông mày|She raised an eyebrow at his excuse.|
+eyelash|ˈaɪˌlæʃ|noun|lông mi|You have an eyelash on your cheek.|
+forehead|ˈfɔrˌhɛd|noun|trán|Feel his forehead, he's burning up.|
+temple|ˈtɛmpəl|noun|thái dương|She rubbed her temple and sighed.|
+jaw|dʒɔ|noun|quai hàm|His jaw dropped when he saw the price.|
+chin|tʃɪn|noun|cằm|Keep your chin up.|
+nostril|ˈnɑstrəl|noun|lỗ mũi|The horse flared its nostril.|
+gums|ɡʌmz|noun|nướu, lợi|My gums bleed when I brush too hard.|
+palm|pɑm|noun|lòng bàn tay|She held the tiny bird in her palm.|🤲
+knuckle|ˈnʌkəl|noun|khớp đốt ngón tay|He cracked every knuckle before typing.|
+wrist|rɪst|noun|cổ tay|She sprained her wrist playing volleyball.|
+elbow|ˈɛlˌboʊ|noun|khuỷu tay|Keep your elbow off the table.|💪
+armpit|ˈɑrmˌpɪt|noun|nách|Tickle him under the armpit.|
+belly button|ˈbɛli ˌbʌtən|noun|rốn|The baby kept poking her belly button.|
+thigh|θaɪ|noun|đùi|I pulled a muscle in my thigh.|
+calf|kæf|noun|bắp chân|My calf cramped up during the run.|
+ankle|ˈæŋkəl|noun|mắt cá chân|He twisted his ankle on the stairs.|
+heel|hil|noun|gót chân|These shoes hurt my heel.|🦶
+toenail|ˈtoʊˌneɪl|noun|móng chân|Trim your toenail straight across.|
+bruise|bruz|noun|vết bầm|She had a bruise on her knee.|
+scab|skæb|noun|vảy vết thương|Stop picking at that scab.|
+blister|ˈblɪstər|noun|vết phồng rộp|New shoes gave me a blister.|
+splinter|ˈsplɪntər|noun|cái dằm (gỗ đâm vào da)|I got a splinter from the old fence.|
+rash|ræʃ|noun|phát ban, mẩn ngứa|The new soap gave me a rash.|
+hiccups|ˈhɪkʌps|noun|nấc cụt|Drink some water to stop the hiccups.|
+goosebumps|ˈɡusˌbʌmps|noun|nổi da gà|That song gives me goosebumps.|
+runny nose|ˌrʌni ˈnoʊz|noun|sổ mũi|I woke up with a runny nose.|🤧
+sore throat|ˌsɔr ˈθroʊt|noun|đau họng|Honey helps with a sore throat.|
+itchy|ˈɪtʃi|adj|ngứa|This sweater is so itchy.|
+dizzy|ˈdɪzi|adj|chóng mặt|I felt dizzy after the ride.|😵‍💫
+`},
+{id:'thien',name:'Animals & Nature',icon:'🐿️',list:`
+squirrel|ˈskwɝəl|noun|con sóc|A squirrel buried an acorn in the yard.|🐿️
+raccoon|ræˈkun|noun|gấu mèo|A raccoon knocked over our trash can.|🦝
+owl|aʊl|noun|con cú|An owl hooted all night.|🦉
+sparrow|ˈspɛroʊ|noun|chim sẻ|A sparrow landed on the windowsill.|
+pigeon|ˈpɪdʒən|noun|chim bồ câu|A pigeon stole a bit of my sandwich.|
+crow|kroʊ|noun|con quạ|A crow cawed from the power line.|
+hawk|hɔk|noun|chim ưng, diều hâu|A hawk circled above the field.|
+beetle|ˈbitəl|noun|bọ cánh cứng|A shiny beetle crawled across the path.|🪲
+cricket|ˈkrɪkɪt|noun|con dế|You could hear a cricket chirping outside.|🦗
+grasshopper|ˈɡræsˌhɑpər|noun|châu chấu|The grasshopper jumped into the tall grass.|
+dragonfly|ˈdræɡənˌflaɪ|noun|chuồn chuồn|A dragonfly hovered over the pond.|
+moth|mɔθ|noun|bướm đêm|A moth kept circling the lamp.|
+firefly|ˈfaɪərˌflaɪ|noun|đom đóm|We caught a firefly in a jar.|
+cockroach|ˈkɑkˌroʊtʃ|noun|con gián|She screamed at the cockroach.|🪳
+gecko|ˈɡɛkoʊ|noun|thạch sùng, tắc kè|A gecko clicked on the ceiling.|🦎
+snail|sneɪl|noun|ốc sên|A snail left a silver trail on the step.|🐌
+earthworm|ˈɝθˌwɝm|noun|giun đất|The rain brought every earthworm to the surface.|🪱
+tadpole|ˈtædˌpoʊl|noun|con nòng nọc|A tadpole grows into a frog.|
+toad|toʊd|noun|con cóc|A fat toad sat by the well.|🐸
+rooster|ˈrustər|noun|gà trống|The rooster crowed at dawn.|🐓
+hen|hɛn|noun|gà mái|The hen laid two eggs today.|🐔
+chick|tʃɪk|noun|gà con|The chick followed its mother everywhere.|🐤
+duckling|ˈdʌklɪŋ|noun|vịt con|A duckling waddled after the others.|🦆
+puppy|ˈpʌpi|noun|chó con|The puppy chewed my slipper.|🐶
+kitten|ˈkɪtən|noun|mèo con|The kitten is chasing its own tail.|🐱
+water buffalo|ˈwɔtər ˌbʌfəˌloʊ|noun|con trâu|A water buffalo waded through the rice field.|🐃
+puddle|ˈpʌdəl|noun|vũng nước|The kids jumped in every puddle.|
+pebble|ˈpɛbəl|noun|viên sỏi|He skipped a pebble across the lake.|
+twig|twɪɡ|noun|cành cây nhỏ|A twig snapped under her foot.|
+thorn|θɔrn|noun|cái gai|Every rose has a thorn.|🌹
+weeds|widz|noun|cỏ dại|The garden is full of weeds.|
+bark|bɑrk|noun|vỏ cây|The bark of the old tree was rough.|🌳
+stream|strim|noun|con suối|We crossed a shallow stream.|
+meadow|ˈmɛdoʊ|noun|đồng cỏ|Wildflowers covered the meadow.|
+cliff|klɪf|noun|vách đá|They stood at the edge of the cliff.|
+dew|du|noun|sương đọng trên lá|The grass was wet with dew.|💧
+`},
+{id:'tre',name:'Kids & Everyday Life',icon:'🧸',list:`
+stroller|ˈstroʊlər|noun|xe đẩy em bé|She pushed the stroller through the park.|
+crib|krɪb|noun|cũi, giường em bé|The baby fell asleep in her crib.|
+pacifier|ˈpæsəˌfaɪər|noun|núm vú giả|He won't sleep without his pacifier.|
+diaper|ˈdaɪpər|noun|tã, bỉm|Can you change the baby's diaper?|
+bib|bɪb|noun|yếm ăn|Put a bib on him before he eats.|
+rattle|ˈrætəl|noun|cái lúc lắc (đồ chơi)|The baby shook her rattle and laughed.|
+seesaw|ˈsiˌsɔ|noun|bập bênh|Two kids went up and down on the seesaw.|
+swing|swɪŋ|noun|xích đu|Push me higher on the swing!|
+slide|slaɪd|noun|cầu tuột|He went down the slide headfirst.|🛝
+sandbox|ˈsændˌbɑks|noun|hố cát cho trẻ chơi|They built a castle in the sandbox.|
+tag|tæɡ|noun|trò đuổi bắt|Let's play tag, you're it!|
+hide-and-seek|ˌhaɪd ən ˈsik|noun|trò trốn tìm|We played hide-and-seek until dark.|🙈
+piggyback ride|ˈpɪɡiˌbæk ˌraɪd|noun|cõng trên lưng|Dad gave her a piggyback ride home.|
+tantrum|ˈtæntrəm|noun|cơn ăn vạ|He threw a tantrum in the toy store.|
+sleepover|ˈslipˌoʊvər|noun|ngủ lại nhà bạn|Can I go to the sleepover on Friday?|
+crayon|ˈkreɪˌɑn|noun|bút sáp màu|She drew the sun with a yellow crayon.|🖍️
+sticker|ˈstɪkər|noun|hình dán|He got a gold sticker for reading.|
+scooter|ˈskutər|noun|xe trượt scooter|She rode her scooter to school.|🛴
+tricycle|ˈtraɪsɪkəl|noun|xe ba bánh|My little brother still rides a tricycle.|
+lullaby|ˈlʌləˌbaɪ|noun|bài hát ru|Mom sang a lullaby until I fell asleep.|🌙
+nap|næp|noun|giấc ngủ ngắn|The baby takes a nap after lunch.|😴
+tickle|ˈtɪkəl|verb|cù lét|Don't tickle me, I'll scream!|
+tiptoe|ˈtɪpˌtoʊ|verb|đi nhón chân|She had to tiptoe past the sleeping dog.|
+giggle|ˈɡɪɡəl|verb|cười khúc khích|The girls began to giggle in the back row.|🤭
+sulk|sʌlk|verb|hờn dỗi|He went to his room to sulk.|
+tattletale|ˈtætəlˌteɪl|noun|đứa hay mách lẻo|Nobody likes a tattletale.|
+chores|tʃɔrz|noun|việc nhà|I have to finish my chores first.|
+allowance|əˈlaʊəns|noun|tiền tiêu vặt|She saves half her allowance every week.|
+errands|ˈɛrəndz|noun|việc vặt (đi gửi đồ, mua đồ)|I have a few errands to run this morning.|
+groceries|ˈɡroʊsəriz|noun|đồ đi chợ, thực phẩm|Help me carry the groceries inside.|🛒
+`},
+{id:'van',name:'Literary & Advanced',icon:'🖋️',list:`
+ephemeral|ɪˈfɛmərəl|adj|phù du, chóng tàn|Fame on the internet is ephemeral.|
+melancholy|ˈmɛlənˌkɑli|noun, adj|nỗi u sầu; u buồn|A quiet melancholy settled over the town.|
+wistful|ˈwɪstfəl|adj|bâng khuâng, man mác tiếc nuối|She gave a wistful smile at the old photo.|
+poignant|ˈpɔɪnjənt|adj|thấm thía, gây xúc động|The ending was simple but poignant.|
+luminous|ˈlumənəs|adj|sáng rực, rạng ngời|Her eyes were luminous with tears.|
+languid|ˈlæŋɡwɪd|adj|uể oải, chậm rãi lười nhác|It was a languid summer afternoon.|
+reverie|ˈrɛvəri|noun|sự mơ màng, trầm tư|A car horn broke her reverie.|
+solace|ˈsɑləs|noun|niềm an ủi|He found solace in books.|
+ineffable|ɪnˈɛfəbəl|adj|không lời nào tả xiết|The view filled her with ineffable joy.|
+visceral|ˈvɪsərəl|adj|bản năng, từ tận ruột gan|Her reaction was visceral and immediate.|
+cadence|ˈkeɪdəns|noun|nhịp điệu (giọng nói, câu văn)|I love the cadence of her sentences.|
+taciturn|ˈtæsɪˌtɝn|adj|lầm lì, ít nói|Her taciturn father rarely smiled.|
+laconic|ləˈkɑnɪk|adj|kiệm lời, ngắn gọn|His laconic reply was just "Fine."|
+sardonic|sɑrˈdɑnɪk|adj|mỉa mai, giễu cợt|He gave a sardonic laugh.|
+forlorn|fərˈlɔrn|adj|trơ trọi, thê lương|A forlorn dog waited by the gate.|
+desolate|ˈdɛsələt|adj|hoang vắng, tiêu điều|The village looked desolate in winter.|
+ethereal|ɪˈθɪriəl|adj|thanh thoát, như không thuộc cõi trần|Her voice had an ethereal quality.|
+serene|səˈrin|adj|thanh bình, tĩnh lặng|The lake was serene at dawn.|
+brooding|ˈbrudɪŋ|adj|u uất, trầm ngâm nặng nề|He sat in brooding silence.|
+palpable|ˈpælpəbəl|adj|rõ rệt, gần như chạm được|The tension in the room was palpable.|
+ubiquitous|juˈbɪkwɪtəs|adj|có mặt khắp nơi|Phones are ubiquitous now.|
+meticulous|məˈtɪkjələs|adj|tỉ mỉ, kỹ lưỡng|She kept meticulous notes.|
+capricious|kəˈprɪʃəs|adj|thất thường|The weather here is capricious.|
+austere|ɔˈstɪr|adj|khắc khổ, giản dị đến nghiêm ngặt|The room was austere, with one chair and a bed.|
+nuance|ˈnuˌɑns|noun|sắc thái tinh tế|Translation often loses nuance.|
+juxtapose|ˈdʒʌkstəˌpoʊz|verb|đặt cạnh nhau để đối chiếu|The film likes to juxtapose wealth and poverty.|
+ruminate|ˈruməˌneɪt|verb|nghiền ngẫm|She would ruminate on the letter for days.|
+linger|ˈlɪŋɡər|verb|nán lại; còn vương vấn|The smell of rain seemed to linger.|
+murmur|ˈmɝmər|verb, noun|thì thầm; tiếng rì rầm|I heard a murmur from the next room.|
+glimmer|ˈɡlɪmər|noun, verb|ánh le lói|There was a glimmer of hope.|
+flicker|ˈflɪkər|verb|chập chờn|The candle began to flicker.|🕯️
+trudge|trʌdʒ|verb|lê bước nặng nhọc|We had to trudge through the snow.|
+saunter|ˈsɔntər|verb|đi thong thả, ung dung|He likes to saunter in late, smiling.|
+scrutinize|ˈskrutəˌnaɪz|verb|xem xét kỹ lưỡng|Editors scrutinize every line.|
+relish|ˈrɛlɪʃ|verb|tận hưởng, thích thú|I relish a quiet morning.|
+resilient|rɪˈzɪljənt|adj|kiên cường, mau hồi phục|Children are surprisingly resilient.|
+tenacious|təˈneɪʃəs|adj|bền bỉ, lì lợm|She is a tenacious reporter.|
+whimsical|ˈwɪmzɪkəl|adj|kỳ quặc đáng yêu, ngẫu hứng|The book has whimsical drawings.|
+candor|ˈkændər|noun|sự thẳng thắn|I appreciate your candor.|
+ambivalent|æmˈbɪvələnt|adj|nửa muốn nửa không, lưỡng lự|She felt ambivalent about moving back home.|
+epiphany|ɪˈpɪfəni|noun|khoảnh khắc chợt vỡ lẽ|He had an epiphany in the shower.|💡
+serendipity|ˌsɛrənˈdɪpəti|noun|sự tình cờ may mắn|Meeting her was pure serendipity.|
+petrichor|ˈpɛtrɪˌkɔr|noun|mùi đất sau cơn mưa|I love the petrichor after a storm.|🌧️
+threadbare|ˈθrɛdˌbɛr|adj|sờn cũ|He wore a threadbare coat.|
+dilapidated|dɪˈlæpɪˌdeɪtɪd|adj|đổ nát, xập xệ|They bought a dilapidated farmhouse.|
+incessant|ɪnˈsɛsənt|adj|không ngớt|The incessant rain kept us inside.|
+somber|ˈsɑmbər|adj|u ám, ảm đạm|The mood at the funeral was somber.|
+tranquil|ˈtræŋkwəl|adj|yên tĩnh, êm đềm|We stayed in a tranquil village.|
+eloquent|ˈɛləkwənt|adj|hùng hồn, lưu loát|She gave an eloquent speech.|
+evocative|ɪˈvɑkətɪv|adj|gợi hình, gợi cảm xúc|The poem is full of evocative images.|
+`},
+{id:'cum',name:'Phrases & Idioms',icon:'💬',list:`
+come across|ˌkʌm əˈkrɔs|phrasal verb|tình cờ thấy, bắt gặp|If you come across a good book, tell me.|
+put up with|ˌpʊt ˈʌp wɪð|phrasal verb|chịu đựng|I can't put up with the noise anymore.|
+look forward to|ˌlʊk ˈfɔrwərd tu|phrasal verb|mong chờ|I look forward to your next story.|
+figure out|ˌfɪɡjər ˈaʊt|phrasal verb|tìm ra, hiểu ra|I can't figure out how this works.|
+run into|ˌrʌn ˈɪntu|phrasal verb|tình cờ gặp (ai)|Did you run into anyone at the market?|
+get over|ˌɡɛt ˈoʊvər|phrasal verb|vượt qua (nỗi buồn, bệnh)|It took her months to get over the breakup.|
+bring up|ˌbrɪŋ ˈʌp|phrasal verb|nhắc đến; nuôi nấng|Don't bring up politics at dinner.|
+turn down|ˌtɝn ˈdaʊn|phrasal verb|từ chối; vặn nhỏ|Why did you turn down the offer?|
+make up|ˌmeɪk ˈʌp|phrasal verb|bịa ra; làm lành|Kids love to make up stories.|
+hold on|ˌhoʊld ˈɑn|phrasal verb|chờ chút; bám chặt|Hold on, let me grab my keys.|
+pull off|ˌpʊl ˈɔf|phrasal verb|làm được (việc khó)|Nobody thought we could pull off the surprise party.|
+dwell on|ˈdwɛl ˌɑn|phrasal verb|cứ nghĩ mãi về|Try not to dwell on your mistakes.|
+once in a blue moon|ˌwʌns ɪn ə ˌblu ˈmun|idiom|năm thì mười họa|He calls me once in a blue moon.|
+under the weather|ˌʌndər ðə ˈwɛðər|idiom|hơi mệt, không khỏe|I'm feeling a bit under the weather.|
+spill the beans|ˌspɪl ðə ˈbinz|idiom|lỡ để lộ bí mật|Who's going to spill the beans first?|
+break the ice|ˌbreɪk ði ˈaɪs|idiom|phá vỡ sự ngại ngùng|A silly joke can break the ice.|
+bite the bullet|ˌbaɪt ðə ˈbʊlɪt|idiom|cắn răng làm việc khó|I decided to bite the bullet and call her.|
+beat around the bush|ˌbit əˌraʊnd ðə ˈbʊʃ|idiom|nói vòng vo|Don't beat around the bush, just tell me.|
+the last straw|ðə ˌlæst ˈstrɔ|idiom|giọt nước tràn ly|His lie was the last straw.|
+a blessing in disguise|ə ˌblɛsɪŋ ɪn dɪsˈɡaɪz|idiom|trong cái rủi có cái may|Losing that job was a blessing in disguise.|
+hit the nail on the head|ˌhɪt ðə ˈneɪl ɑn ðə ˈhɛd|idiom|nói trúng phóc|You really hit the nail on the head.|
+on the fence|ɑn ðə ˈfɛns|idiom|còn phân vân|I'm still on the fence about moving.|
+get the hang of|ˌɡɛt ðə ˈhæŋ əv|idiom|quen tay, nắm được cách làm|You'll get the hang of it soon.|
+take for granted|ˌteɪk fər ˈɡræntɪd|idiom|coi là hiển nhiên|We often take clean water for granted.|
+make ends meet|ˌmeɪk ˈɛndz ˌmit|idiom|xoay xở đủ sống|They work two jobs to make ends meet.|
+in the nick of time|ɪn ðə ˌnɪk əv ˈtaɪm|idiom|vừa kịp lúc|The ambulance arrived in the nick of time.|
+at a loss for words|æt ə ˌlɔs fər ˈwɝdz|idiom|không nói nên lời|For once, she was at a loss for words.|
+by and large|ˌbaɪ ən ˈlɑrdʒ|phrase|nhìn chung|By and large, the trip went well.|
+in hindsight|ɪn ˈhaɪndˌsaɪt|phrase|nhìn lại thì|In hindsight, I should have waited.|
+needless to say|ˌnidləs tə ˈseɪ|phrase|khỏi phải nói|Needless to say, we missed the train.|
+for what it's worth|fər ˌwʌt ɪts ˈwɝθ|phrase|dù sao thì (nói cho bạn biết)|For what it's worth, I think you did the right thing.|
+lo and behold|ˌloʊ ən bɪˈhoʊld|phrase|thế mà, ai ngờ (văn kể chuyện)|I opened the box and, lo and behold, it was empty.|
+all of a sudden|ˌɔl əv ə ˈsʌdən|phrase|bỗng nhiên|All of a sudden, the lights went out.|
+little did I know|ˌlɪtəl dɪd aɪ ˈnoʊ|phrase|tôi đâu có ngờ|Little did I know, she had planned it all.|
+to say the least|tə ˌseɪ ðə ˈlist|phrase|nói giảm nói tránh thì|The meeting was awkward, to say the least.|
+`}
+];
+
+/* ============ PARSE THE WORD LIST ============ */
+const WORDS = {}; const TOPICS = [];
+function slug(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+TOPICS_RAW.forEach(t=>{
+  const ids=[];
+  t.list.trim().split('\n').forEach(line=>{
+    line=line.trim(); if(!line) return;
+    const [w,ipa,type,vi,ex,emo]=line.split('|').map(s=>(s||'').trim());
+    const id=t.id+'/'+slug(w);
+    WORDS[id]={id,w,ipa,type,vi,ex,emo,topic:t.id}; ids.push(id);
+  });
+  TOPICS.push({id:t.id,name:t.name,icon:t.icon,ids});
+});
+const MINE={id:'mine',name:'My Words',icon:'📓',ids:[]};
+TOPICS.push(MINE);
+
+/* ============ SAVED PROGRESS ============ */
+const KEY='votu-v1';
+const MIN=60e3,H=60*MIN,D=24*H;
+const IV={1:H,2:D,3:3*D,4:7*D,5:21*D};
+function blank(){return{words:{},custom:[],settings:{rate:0.9,voice:'',per:5,auto:true,tipDone:false,focusOn:false,focusMin:5},streak:{day:'',count:0},updatedAt:0}}
+function normalizeState(s){const b=blank();if(!s||typeof s!=='object'||!s.words)return b;return Object.assign(b,s,{settings:Object.assign(b.settings,s.settings||{}),streak:Object.assign(b.streak,s.streak||{}),custom:Array.isArray(s.custom)?s.custom:[]})}
+function load(){try{return normalizeState(JSON.parse(localStorage.getItem(KEY)||'null'))}catch(e){return blank()}}
+let S=load();
+function rebuildCustom(){
+  MINE.ids.forEach(id=>delete WORDS[id]); MINE.ids=[];
+  S.custom.forEach(c=>{WORDS[c.id]=Object.assign({},c,{topic:'mine'});MINE.ids.push(c.id)});
+}
+rebuildCustom();
+function save(){S.updatedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}queueSync();if(view==='settings'&&!sess)refreshCode()}
+
+/* Sync through the Claude account when available, otherwise stay on this device */
+let DB=null,UID=null,syncT=null,SAMPLE=null;
+function queueSync(){if(!DB)return;clearTimeout(syncT);syncT=setTimeout(pushRemote,1500)}
+async function pushRemote(){if(!DB)return;try{await DB.doc('data/users/'+UID+'/progress').set(JSON.parse(JSON.stringify(S)))}catch(e){}}
+(async()=>{
+  if(!(window.claude&&window.claude.use))return;
+  try{
+    const [d,u]=await Promise.all([claude.use('db'),claude.use('user')]);
+    if(d&&u){const id=await u.id();if(id){DB=d;UID=id;
+      const snap=await DB.doc('data/users/'+UID+'/progress').get();
+      if(snap.exists){const r=normalizeState(JSON.parse(JSON.stringify(snap.data())));
+        if((r.updatedAt||0)>(S.updatedAt||0)){S=r;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}rebuildCustom();render()}
+        else if((S.updatedAt||0)>(r.updatedAt||0))pushRemote();
+      }else if(S.updatedAt)pushRemote();
+    }}
+  }catch(e){}
+})();
+(async()=>{if(!(window.claude&&window.claude.use))return;try{SAMPLE=await claude.use('sample');if(SAMPLE&&view==='bank')render()}catch(e){}})();
+
+/* ============ TEXT TO SPEECH (American voice) ============ */
+let voices=[];
+function loadVoices(){if(!('speechSynthesis' in window))return;try{voices=speechSynthesis.getVoices().filter(v=>/^en[-_]US/i.test(v.lang));if(view==='settings'&&!sess)render()}catch(e){}}
+if('speechSynthesis' in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+function pickVoice(){
+  if(S.settings.voice){const v=voices.find(v=>v.name===S.settings.voice);if(v)return v}
+  const pref=['Samantha','Google US English','Aria','Jenny','Ava','Allison','Alex'];
+  for(const p of pref){const v=voices.find(v=>v.name.includes(p));if(v)return v}
+  return voices.find(v=>v.localService)||voices[0]||null;
+}
+function speak(text,slow){
+  if(!('speechSynthesis' in window)){toast('This browser can’t read words aloud. Try Safari or Chrome.');return}
+  speechSynthesis.cancel();
+  setTimeout(()=>{const u=new SpeechSynthesisUtterance(text);u.lang='en-US';const v=pickVoice();if(v)u.voice=v;u.rate=slow?0.6:S.settings.rate;speechSynthesis.speak(u)},40);
+}
+
+/* ============ SPEECH RECOGNITION ============ */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null;
+function norm(s){return(s||'').toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z0-9' -]/g,' ').replace(/\s+/g,' ').trim()}
+function tight(s){return norm(s).replace(/[\s-]/g,'')}
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,i)=>i);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
+function sim(a,b){a=tight(a);b=tight(b);if(!a||!b)return 0;return 1-lev(a,b)/Math.max(a.length,b.length)}
+function startMic(id,btn){
+  const out=document.getElementById('micout');
+  if(!SR){out.textContent='This browser can’t listen to your voice. Try the latest Chrome or Safari.';return}
+  if(rec){try{rec.abort()}catch(e){}rec=null;btn.classList.remove('on');return}
+  const w=WORDS[id];let done=false;
+  rec=new SR();rec.lang='en-US';rec.interimResults=false;rec.maxAlternatives=5;
+  btn.classList.add('on');btn.lastChild.textContent=' Listening…';out.textContent='';
+  const fin=(msg,color)=>{if(done)return;done=true;rec=null;btn.classList.remove('on');btn.lastChild.textContent=' Say it';out.innerHTML=msg;out.style.color=color||''};
+  rec.onresult=e=>{
+    const alts=[...e.results[0]].map(a=>a.transcript);
+    let best=0,heard=alts[0]||'';
+    alts.forEach(a=>{const s=Math.max(sim(a,w.w),norm(a).includes(norm(w.w))?1:0);if(s>best){best=s;heard=a}});
+    if(best>=0.85)fin('✓ Great! I heard: <b>'+esc(heard)+'</b>','var(--ok)');
+    else if(best>=0.6)fin('Close. I heard: <b>'+esc(heard)+'</b>. Listen to the model and try again.','var(--l2)');
+    else fin('Not a match. I heard: <b>'+esc(heard)+'</b>','var(--bad)');
+  };
+  rec.onerror=e=>{const m={'not-allowed':'I can’t use your microphone. Allow mic access in your browser, then try again.','service-not-allowed':'I can’t use your microphone. Allow mic access in your browser, then try again.','no-speech':'I didn’t hear anything. Tap again and speak a bit louder.','network':'Checking pronunciation needs an internet connection.'};fin(m[e.error]||'I couldn’t hear you. Please try again.')};
+  rec.onend=()=>fin('I didn’t hear anything. Tap again and speak a bit louder.');
+  try{rec.start()}catch(e){fin('I can’t open the microphone here. Try opening the app in your browser.')}
+}
+
+/* ============ HELPERS ============ */
+const $=s=>document.querySelector(s);
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function armed(b,label){
+  if(b.dataset.armed==='1')return true;
+  b.dataset.armed='1';const old=b.innerHTML;b.classList.add('armed');if(label)b.textContent=label;
+  clearTimeout(b._t);b._t=setTimeout(()=>{if(!b.isConnected)return;b.dataset.armed='';b.classList.remove('armed');b.innerHTML=old},3500);
+  return false;
+}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2600)}
+function plural(n,w){return n+' '+w+(n===1?'':'s')}
+function fmtIn(ms){if(ms<H)return plural(Math.max(1,Math.round(ms/MIN)),'minute');if(ms<D)return plural(Math.round(ms/H),'hour');return plural(Math.round(ms/D),'day')}
+function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function yesterday(){const d=new Date(Date.now()-D);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function reRx(w){return new RegExp('(^|[^A-Za-z])('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')(?=[^A-Za-z]|$)','i')}
+function hasBlank(w){return !!w.ex&&reRx(w.w).test(w.ex)}
+function hiEx(w){if(!w.ex)return'';const m=w.ex.match(reRx(w.w));if(!m)return esc(w.ex);const i=m.index+m[1].length;return esc(w.ex.slice(0,i))+'<mark>'+esc(m[2])+'</mark>'+esc(w.ex.slice(i+m[2].length))}
+const IC={
+  spk:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  slow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16c0-4 3-7 7-7s6 3 6 5-1 3-3 3H6"/><path d="M17 14h2a2 2 0 0 0 0-4h-1"/><path d="M7 17v2M13 17v2"/></svg>',
+  mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>'
+};
+
+/* ============ MOVE PROGRESS (progress code) ============ */
+let exportCode='',codeRun=0;
+function b64enc(bytes){let s='';for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function b64dec(str){str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';const bin=atob(str);const out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
+async function pipeBytes(bytes,stream){return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer())}
+function exportJSON(){return JSON.stringify({app:'conquer-vocab',v:1,words:S.words,custom:S.custom,settings:S.settings,streak:S.streak})}
+function plainCode(){return 'CV1.'+b64enc(new TextEncoder().encode(exportJSON()))}
+async function makeCode(){
+  const raw=new TextEncoder().encode(exportJSON());
+  if(typeof CompressionStream==='function'){try{return 'CV1z.'+b64enc(await pipeBytes(raw,new CompressionStream('gzip')))}catch(e){}}
+  return 'CV1.'+b64enc(raw);
+}
+function refreshCode(){const n=++codeRun;makeCode().then(c=>{if(n!==codeRun)return;exportCode=c;const ta=document.getElementById('codeOut');if(ta)ta.value=c}).catch(()=>{})}
+async function readCode(text){
+  const m=(text||'').replace(/\s+/g,'').match(/CV1(z?)\.([A-Za-z0-9_-]+)/);
+  if(!m)throw new Error('bad');
+  let bytes=b64dec(m[2]);
+  if(m[1]){if(typeof DecompressionStream!=='function')throw new Error('old');bytes=await pipeBytes(bytes,new DecompressionStream('gzip'))}
+  const data=JSON.parse(new TextDecoder().decode(bytes));
+  if(!data||data.app!=='conquer-vocab'||!data.words||typeof data.words!=='object')throw new Error('bad');
+  return data;
+}
+function mergeProgress(data){
+  const inc=normalizeState({words:data.words,custom:data.custom,settings:data.settings,streak:data.streak});
+  const rank=p=>p.known?6:(+p.lv||1);
+  let n=0;
+  for(const id in inc.words){
+    const a=S.words[id],b=inc.words[id];
+    if(!b||typeof b!=='object')continue;
+    if(!a||rank(b)>rank(a)||(rank(b)===rank(a)&&(+b.due||0)>(+a.due||0))){S.words[id]=b;n++}
+  }
+  const have=new Set(S.custom.map(c=>c.id));
+  inc.custom.forEach(c=>{if(c&&c.id&&c.w&&!have.has(c.id)){S.custom.push(c);have.add(c.id)}});
+  if((+inc.streak.count||0)>(+S.streak.count||0))S.streak=inc.streak;
+  const tipDone=S.settings.tipDone||inc.settings.tipDone;
+  S.settings=Object.assign({},S.settings,inc.settings,{tipDone});
+  rebuildCustom();save();
+  return n;
+}
+
+/* ============ LEARNING STATE ============ */
+function prog(id){return S.words[id]}
+function isNew(id){return !S.words[id]}
+function dueList(){const now=Date.now();return Object.keys(S.words).filter(id=>WORDS[id]&&!S.words[id].known&&S.words[id].due<=now).sort((a,b)=>S.words[a].due-S.words[b].due)}
+function nextDue(){let m=Infinity;for(const id in S.words){const p=S.words[id];if(WORDS[id]&&!p.known&&p.due<m)m=p.due}return m}
+function levelCounts(){const c=[0,0,0,0,0,0];let k=0;for(const id in S.words){if(!WORDS[id])continue;const p=S.words[id];if(p.known)k++;else c[p.lv]++}return{c,k}}
+function bumpStreak(){const t=today();if(S.streak.day===t)return;S.streak.count=S.streak.day===yesterday()?S.streak.count+1:1;S.streak.day=t}
+
+/* ============ MAIN SCREENS ============ */
+function render(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===view?'page':'false'));
+  const html=view==='home'?vHome():view==='bank'?vBank():vSettings();
+  const app=$('#app');
+  const q=document.activeElement&&document.activeElement.id==='bq';
+  app.innerHTML=html;
+  if(view==='settings')refreshCode();
+  if(q){const i=$('#bq');i.focus();i.setSelectionRange(i.value.length,i.value.length)}
+}
+function vHeader(){const st=S.streak.count&&(S.streak.day===today()||S.streak.day===yesterday())?'🔥 '+S.streak.count+'-day streak':'';return`<header class="top"><div class="brand">Conquer Vocab</div><div class="streak">${st}</div></header>`}
+function vHome(){
+  const due=dueList().length;const {c,k}=levelCounts();const learned=c.reduce((a,b)=>a+b,0);
+  let hero;
+  if(due)hero=`<p class="lead"><b>${plural(due,'word')}</b> ${due===1?'is':'are'} due for review. Now is the best moment to refresh your memory.</p><button class="btn btn-primary wide" data-act="review">Review ${plural(Math.min(due,20),'word')}</button>`;
+  else if(learned)hero=`<p class="lead">Nothing to review right now. Your next review is in about <b>${fmtIn(nextDue()-Date.now())}</b>.</p><p class="hint">In the meantime, learn a few new words below.</p>`;
+  else hero=`<p class="lead">Pick a topic below to learn your first ${S.settings.per} words.</p><p class="hint">After each lesson, the app schedules a review just before you would forget. Every right answer moves a word up a level, and Level 5 means it’s in your long-term memory.</p>`;
+  const max=Math.max(1,...c.slice(1));
+  const bars=[1,2,3,4,5].map(l=>`<div class="lv"><span class="n">${c[l]}</span><span class="bar b${l}" style="height:${Math.round(6+(c[l]/max)*80)}px"></span><span class="t">Level ${l}</span></div>`).join('');
+  const installed=(()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}})();
+  const tip=S.settings.tipDone||installed?'':`<div class="sheet"><div class="tip"><span style="flex:1">Open this link in Safari (iPhone) or Chrome (Android) and choose <b>Add to Home Screen</b> from the Share or ⋮ menu to get an icon like a real app.</span><button data-act="tip">Got it</button></div></div>`;
+  const topics=TOPICS.filter(t=>t.ids.length).map(t=>{
+    const n=t.ids.filter(id=>!isNew(id)).length;const left=t.ids.length-n;
+    return`<div class="topic"><div class="ic" aria-hidden="true">${t.icon}</div><div class="tx"><div class="nm">${esc(t.name)}</div><div class="pg">${n}/${t.ids.length} words</div><div class="track"><i style="width:${Math.round(n/t.ids.length*100)}%"></i></div></div>${left?`<button class="btn btn-ghost" data-act="learn" data-t="${t.id}">Learn</button>`:'<span class="pg">Done ✓</span>'}</div>`}).join('');
+  hero+=`<button class="btn btn-ghost wide" style="margin-top:10px" data-act="focus">Study for ${S.settings.focusMin} minutes</button>`;
+  return vHeader()+tip+`<div class="sheet">${hero}</div>
+  <div class="sheet"><h2>Memory levels</h2><div class="levels">${bars}</div><div class="meta"><span>Learning: ${plural(learned,'word')}</span><span>Already known: ${k}</span></div></div>
+  <div class="sheet"><h2>Topics</h2>${topics}</div>`;
+}
+function vBank(){
+  const q=norm(bankQ);
+  let ids=TOPICS.flatMap(t=>t.ids);
+  if(bankF==='new')ids=ids.filter(isNew);
+  else if(bankF==='known')ids=ids.filter(id=>prog(id)&&prog(id).known);
+  else if(bankF!=='all')ids=ids.filter(id=>prog(id)&&!prog(id).known&&prog(id).lv===+bankF);
+  if(q)ids=ids.filter(id=>{const w=WORDS[id];return norm(w.w).includes(q)||w.vi.toLowerCase().includes(bankQ.trim().toLowerCase())});
+  const chips=[['all','All'],['new','New'],['1','Level 1'],['2','Level 2'],['3','Level 3'],['4','Level 4'],['5','Level 5'],['known','Known']].map(([v,l])=>`<button class="chip" data-act="filter" data-f="${v}" aria-pressed="${bankF===v}">${l}</button>`).join('');
+  const rows=ids.slice(0,300).map(id=>{const w=WORDS[id],p=prog(id);
+    const b=!p?'<span class="badge b0">New</span>':p.known?'<span class="badge bk">Known</span>':`<span class="badge b${p.lv}">Lv ${p.lv}</span>`;
+    return`<div class="row"><button class="say sm" data-act="say" data-id="${id}" aria-label="Play ${esc(w.w)}">${IC.spk}</button><div class="rw"><span class="w">${esc(w.w)}</span> <span class="ipa">/${esc(w.ipa)}/</span><div class="vi" lang="vi">${esc(w.vi)}</div>${w.ex?`<div class="ex">${hiEx(w)}</div>`:''}${w.topic==='mine'?`<button class="chip" style="margin-top:6px" data-act="del" data-id="${id}">Delete word</button>`:''}</div>${b}</div>`}).join('')||'<p class="empty">No words here yet.</p>';
+  const ai=SAMPLE?`<button class="btn btn-ghost" data-act="ai" id="aibtn">Auto-fill with AI</button>`:'';
+  return vHeader()+`<input class="search" id="bq" type="search" placeholder="Search words or Vietnamese meanings" value="${esc(bankQ)}" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div class="chips">${chips}</div>
+  <div class="sheet"><details ${S.custom.length?'':'open'}><summary>+ Add your own word</summary>
+    <p class="hint">Found a new word in a book? Add it here and you’ll learn and review it like every other word.</p>
+    <label class="f" for="nw-w">English word or phrase</label><input id="nw-w" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <label class="f" for="nw-vi">Vietnamese meaning</label><input id="nw-vi">
+    <label class="f" for="nw-ipa">IPA pronunciation (optional)</label><input id="nw-ipa" autocapitalize="off">
+    <label class="f" for="nw-ex">Example sentence (optional)</label><input id="nw-ex" autocapitalize="off">
+    <div class="btns">${ai}<button class="btn btn-primary" data-act="add">Save word</button></div>
+  </details></div>
+  <div class="sheet">${rows}</div>`;
+}
+function vSettings(){
+  const vs=voices.length?`<select class="inp" id="voice"><option value="">Automatic</option>${voices.map(v=>`<option ${v.name===S.settings.voice?'selected':''}>${esc(v.name)}</option>`).join('')}</select>`:'<span class="d">Loading…</span>';
+  return vHeader()+`<div class="sheet">
+  <div class="set"><div><div>Voice (American)</div><div class="d">Voices installed on this device</div></div>${vs}</div>
+  <div class="set"><div><div>Speaking speed</div><div class="d" id="ratev">${S.settings.rate.toFixed(2)}×</div></div><input type="range" id="rate" min="0.6" max="1.1" step="0.05" value="${S.settings.rate}"></div>
+  <div class="set"><div>Test the voice</div><button class="say" data-act="test" aria-label="Test the voice">${IC.spk}</button></div>
+  <div class="set"><div><div>Read words aloud automatically</div></div><input type="checkbox" id="auto" ${S.settings.auto?'checked':''} style="width:22px;height:22px;accent-color:var(--tim)"></div>
+  <div class="set"><div><div>New words per lesson</div></div><select class="inp" id="per">${[5,8,10].map(n=>`<option ${n==S.settings.per?'selected':''}>${n}</option>`).join('')}</select></div>
+  </div>
+  <div class="sheet"><h2>Study before screen time</h2>
+  <div class="set"><div><div>Start a session when the app opens</div><div class="d">The exit button stays hidden until time is up</div></div><input type="checkbox" id="focusOn" ${S.settings.focusOn?'checked':''} style="width:22px;height:22px;accent-color:var(--tim)"></div>
+  <div class="set"><div>Session length</div><select class="inp" id="focusMin">${[3,5,10,15].map(n=>`<option value="${n}" ${n==S.settings.focusMin?'selected':''}>${n} minutes</option>`).join('')}</select></div>
+  </div>
+  <div class="sheet"><h2>How reviews work</h2><p class="hint" style="margin-top:0">Every word has 5 levels. A new word starts at Level 1 and comes back for review after 1 hour. Each right answer moves it up a level and spaces out the next review: 1 day, 3 days, 7 days, then 21 days. A wrong answer drops it one level and brings it back in 10 minutes. Most questions make you type the word yourself, from its meaning or from what you hear, so you practice spelling. From Level 3 on, the first-letter hints disappear.</p></div>
+  <div class="sheet"><h2>Move your progress</h2>
+  <p class="hint" style="margin-top:0">Copy your progress code here, then paste it into Conquer Vocab on another phone, computer or link. Your levels, your own words and your settings come along.</p>
+  <div class="btns"><button class="btn btn-primary" id="copybtn" data-act="copycode">Copy progress code</button></div>
+  <details id="codebox"><summary>Show the code</summary><textarea class="inp" id="codeOut" rows="3" readonly aria-label="Your progress code">${esc(exportCode)}</textarea></details>
+  <label class="f" for="codeIn">Paste a code from another device</label>
+  <textarea class="inp" id="codeIn" rows="3" placeholder="CV1z.…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+  <div class="btns"><button class="btn btn-ghost" data-act="loadcode">Load progress</button></div>
+  </div>
+  <div class="sheet"><h2>Your data</h2><p class="hint" style="margin-top:0">${DB?'Your progress is saved to your Claude account and on this device.':'Your progress is saved on this device.'}</p><div class="btns"><button class="btn btn-ghost" data-act="reset">Reset all progress</button></div></div>`;
+}
+
+/* ============ LESSONS AND REVIEWS ============ */
+function startLearn(tid){
+  const t=TOPICS.find(x=>x.id===tid);const pool=t.ids.filter(isNew);
+  if(!pool.length){toast('You’ve learned every word in this topic!');return}
+  const first=pool.splice(0,S.settings.per);
+  sess={kind:'learn',steps:first.map(id=>({t:'card',id})),pool,i:0,learned:[],missed:{},quiz:false,right:0,wrong:0,wrongIds:[],answered:false};
+  openSess();
+}
+function startReview(){
+  const ids=dueList().slice(0,20);if(!ids.length){toast('Nothing to review yet.');return}
+  sess={kind:'review',steps:shuffle(ids).map(id=>({t:'q',id,qt:pickQt(id,false)})),i:0,right:0,wrong:0,wrongIds:[],ups:0,answered:false};
+  openSess();
+}
+function startFocus(){
+  const ms=S.settings.focusMin*MIN;
+  sess={kind:'focus',steps:[],i:0,learned:[],batch:[],newCount:0,right:0,wrong:0,wrongIds:[],ups:0,answered:false,total:ms,left:ms,last:performance.now(),timeUp:false};
+  openSess();
+}
+function refillFocus(){
+  const s=sess,now=Date.now();
+  if(s.batch.length){
+    s.batch.forEach(id=>{S.words[id]={lv:1,due:now+H,added:now}});save();
+    s.steps.push(...learnQuiz(s.batch,{learnQ:true}));
+    s.newCount+=s.batch.length;s.batch=[];return;
+  }
+  const due=dueList().slice(0,5);
+  if(due.length){shuffle(due).forEach(id=>s.steps.push({t:'q',id,qt:pickQt(id,false)}));return}
+  const ts=TOPICS.filter(t=>t.ids.some(isNew));
+  if(ts.length){const t=ts[Math.floor(Math.random()*ts.length)];t.ids.filter(isNew).slice(0,5).forEach(id=>s.steps.push({t:'card',id}));return}
+  let ids=Object.keys(S.words).filter(id=>WORDS[id]&&!S.words[id].known);
+  if(!ids.length)ids=Object.keys(WORDS);
+  shuffle(ids).slice(0,5).forEach(id=>s.steps.push({t:'q',id,qt:pickQt(id,false),practice:true}));
+}
+function fmtClock(ms){const t=Math.max(0,Math.ceil(ms/1000));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
+setInterval(()=>{
+  if(!sess||sess.kind!=='focus')return;
+  const now=performance.now();
+  if(!document.hidden&&!sess.timeUp){sess.left-=now-sess.last}
+  sess.last=now;
+  const el=document.getElementById('timer'),pb=document.getElementById('pbar');
+  if(pb)pb.style.width=Math.min(100,Math.round((1-sess.left/sess.total)*100))+'%';
+  if(sess.timeUp)return;
+  if(sess.left<=0){sess.timeUp=true;if(el){el.textContent='Done ✓';el.classList.add('okt')}toast('Time’s up! Finish this question and you’re done.')}
+  else if(el)el.textContent=fmtClock(sess.left);
+},250);
+function finishFocus(){
+  const s=sess,now=Date.now();
+  if(s.batch.length){s.batch.forEach(id=>{S.words[id]={lv:1,due:now+H,added:now}});s.newCount+=s.batch.length;s.batch=[]}
+  bumpStreak();save();
+  const total=s.right+s.wrong;
+  $('#sess').innerHTML=`<div class="session"><div class="in done"><div class="sbar"><div class="prog"><i style="width:100%"></i></div></div>
+    <div class="sheet"><h1>${S.settings.focusMin} minutes done! 🎉</h1>${total?`<p class="lead">You got <b>${s.right}/${total}</b> right${s.newCount?` and learned <b>${plural(s.newCount,'new word')}</b>`:''}.</p>`:''}<p class="hint">Nice work. You’re free to go.</p></div></div></div>
+    <div class="foot"><div class="in2"><button class="btn btn-primary" data-act="quit">Done</button></div></div>`;
+  sess={kind:'done'};
+}
+function pickQt(id,learning){
+  const w=WORDS[id],lv=learning?1:(prog(id)?.lv||1);
+  const canType=w.w.length<=32;
+  const canBlank=hasBlank(w);
+  const r=(a)=>a[Math.floor(Math.random()*a.length)];
+  if(!canType)return r(canBlank?['blank','listen','word']:['listen','word','mean']);
+  if(learning)return r(['type','type','dictation']);
+  if(lv<=2)return r(['type','dictation','type','listen'].concat(canBlank?['blank']:[]));
+  return r(['type','dictation','type','dictation'].concat(canBlank?['blank']:[]));
+}
+function pickChoice(id){const w=WORDS[id];return pick(hasBlank(w)?['word','listen','blank']:['word','listen'])}
+function learnQuiz(ids,extra){
+  const out=[];shuffle(ids).forEach(id=>out.push(Object.assign({t:'q',id,qt:pickChoice(id)},extra)));
+  shuffle(ids).forEach(id=>out.push(Object.assign({t:'q',id,qt:WORDS[id].w.length<=32?pick(['type','type','dictation']):pickChoice(id)},extra)));
+  return out;
+}
+function distract(id,field,n){
+  const w=WORDS[id];const seen=new Set([w[field].toLowerCase()]);
+  const same=shuffle(TOPICS.find(t=>t.id===w.topic).ids.filter(x=>x!==id));
+  const all=shuffle(Object.keys(WORDS).filter(x=>x!==id));
+  const out=[];
+  for(const x of same.concat(all)){const v=WORDS[x][field].toLowerCase();if(seen.has(v))continue;seen.add(v);out.push(x);if(out.length>=n)break}
+  return out;
+}
+function openSess(){document.body.style.overflow='hidden';renderSess()}
+function closeSess(){if(rec){try{rec.abort()}catch(e){}rec=null}sess=null;$('#sess').innerHTML='';document.body.style.overflow='';render()}
+function progressPct(){
+  if(sess.kind==='focus')return Math.min(100,Math.round((1-sess.left/sess.total)*100));
+  if(sess.kind==='learn'){const tot=sess.quiz?sess.steps.length:sess.steps.length+sess.learned.length+(sess.steps.length-sess.i);return Math.min(100,Math.round(sess.i/Math.max(1,tot)*100))}
+  return Math.round(sess.i/sess.steps.length*100);
+}
+function renderSess(){
+  if(!sess)return;
+  if(sess.kind==='focus'){if(sess.timeUp)return finishFocus();if(sess.i>=sess.steps.length)refillFocus()}
+  if(sess.i>=sess.steps.length){
+    if(sess.kind==='learn'&&!sess.quiz&&sess.learned.length){sess.quiz=true;sess.steps.push(...learnQuiz(sess.learned,{}))}
+    else return finish();
+  }
+  const st=sess.steps[sess.i];const w=WORDS[st.id];
+  let body='',foot='';
+  if(st.t==='card'){
+    body=`<div class="sheet card">${w.emo?`<div class="emo" aria-hidden="true">${w.emo}</div>`:''}
+      <div class="word ${w.w.length>14?'md':''}">${esc(w.w)}</div>
+      <div><span class="ipa">/${esc(w.ipa)}/</span><span class="type">${esc(w.type)}</span></div>
+      <div class="sayrow"><button class="say" data-act="say" data-id="${w.id}" aria-label="Play">${IC.spk}</button><button class="say" data-act="say" data-id="${w.id}" data-slow="1" aria-label="Play slowly">${IC.slow}</button></div>
+      <div class="mean" lang="vi">${esc(w.vi)}</div>
+      ${w.ex?`<div class="exbox"><button class="say sm" data-act="sayex" data-id="${w.id}" aria-label="Play the example sentence">${IC.spk}</button><span>${hiEx(w)}</span></div>`:''}
+      <div style="margin-top:16px"><button class="mic" data-act="mic" data-id="${w.id}">${IC.mic}<span> Say it</span></button><div id="micout"></div></div>
+    </div>`;
+    foot=`<button class="btn btn-ghost" data-act="known">I know this</button><button class="btn btn-primary" data-act="learnit">Learn it</button>`;
+  }else{
+    if(!st.opts){
+      if(st.qt==='mean')st.opts=shuffle([st.id,...distract(st.id,'vi',3)]);
+      else if(['listen','word','blank'].includes(st.qt))st.opts=shuffle([st.id,...distract(st.id,'w',3)]);
+    }
+    const opts=(field,cls)=>`<div class="opts">${st.opts.map(id=>`<button class="opt ${cls}"${field==='vi'?' lang="vi"':''} data-act="pick" data-id="${id}">${esc(WORDS[id][field])}</button>`).join('')}</div>`;
+    const plv=st.learnQ||sess.kind==='learn'?1:(prog(st.id)?.lv||1);const hintw=w.w.split('').map((ch,i)=>ch===' '?'\u00a0\u00a0':/[-']/.test(ch)?ch:((i===0||w.w[i-1]===' ')&&plv<3)?ch:'_').join('');
+    if(st.qt==='mean')body=`<p class="q">What does this mean?</p><div class="sheet card"><div class="word ${w.w.length>14?'md':''}">${esc(w.w)}</div><div class="ipa">/${esc(w.ipa)}/</div><div class="sayrow"><button class="say" data-act="say" data-id="${w.id}" aria-label="Play">${IC.spk}</button></div></div>${opts('vi','')}`;
+    else if(st.qt==='listen')body=`<p class="q">Listen and pick the word</p><div class="sheet card"><button class="say bigsay" data-act="say" data-id="${w.id}" aria-label="Play again">${IC.spk}</button><button class="chip" data-act="say" data-id="${w.id}" data-slow="1">Play slowly</button></div>${opts('w','en')}`;
+    else if(st.qt==='word')body=`<p class="q">What’s this in English?</p><div class="sheet card">${w.emo?`<div class="emo" aria-hidden="true">${w.emo}</div>`:''}<div class="mean" lang="vi">${esc(w.vi)}</div></div>${opts('w','en')}`;
+    else if(st.qt==='blank'){const m=w.ex.match(reRx(w.w));const i=m.index+m[1].length;body=`<p class="q">Fill in the blank</p><div class="sheet card"><div class="blank">${esc(w.ex.slice(0,i))}<u>&nbsp;</u>${esc(w.ex.slice(i+m[2].length))}</div><p class="hint" style="text-align:left" lang="vi">${esc(w.vi)}</p></div>${opts('w','en')}`}
+    else if(st.qt==='type')body=`<p class="q">Type the English word</p><div class="sheet card">${w.emo?`<div class="emo" aria-hidden="true">${w.emo}</div>`:''}<div class="mean" lang="vi">${esc(w.vi)}</div><div class="hintw">${esc(hintw)}</div></div><input class="typein" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="Your answer">`;
+    else if(st.qt==='dictation')body=`<p class="q">Type what you hear</p><div class="sheet card"><button class="say bigsay" data-act="say" data-id="${w.id}" aria-label="Play again">${IC.spk}</button><button class="chip" data-act="say" data-id="${w.id}" data-slow="1">Play slowly</button></div><input class="typein" id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="Your answer">`;
+    if(st.qt==='type'||st.qt==='dictation')foot=`<button class="btn btn-ghost" data-act="giveup">I don’t know</button><button class="btn btn-primary" data-act="check">Check</button>`;
+  }
+  $('#sess').innerHTML=`<div class="session"><div class="in"><div class="sbar">${sess.kind==='focus'?'':`<button class="x" data-act="quit" aria-label="Exit">${IC.x}</button>`}<div class="prog"><i id="pbar" style="width:${progressPct()}%"></i></div>${sess.kind==='focus'?`<span class="timer ${sess.timeUp?'okt':''}" id="timer">${sess.timeUp?'Done ✓':fmtClock(sess.left)}</span>`:''}</div>${body}</div></div>${foot?`<div class="foot"><div class="in2">${foot}</div></div>`:''}<div class="fb" id="fb"></div>`;
+  sess.answered=false;
+  const autoSay=st.t==='card'||st.qt==='mean'||st.qt==='listen'||st.qt==='dictation';
+  if(autoSay&&(S.settings.auto||st.qt==='listen'||st.qt==='dictation'))speak(w.w);
+  const a=$('#ans');if(a){a.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();checkTyped()}});setTimeout(()=>a.focus(),250)}
+}
+function answer(ok,note){
+  if(sess.answered)return;sess.answered=true;
+  const st=sess.steps[sess.i];const w=WORDS[st.id];
+  if(ok)sess.right++;else{sess.wrong++;if(!sess.wrongIds.includes(st.id))sess.wrongIds.push(st.id)}
+  if(sess.kind==='focus'&&st.learnQ){if(!ok){S.words[st.id].due=Date.now()+10*MIN;save()}}
+  else if(sess.kind==='review'||(sess.kind==='focus'&&!st.practice)){
+    const p=S.words[st.id];
+    if(ok){if(p.lv<5)sess.ups++;p.lv=Math.min(5,p.lv+1);p.due=Date.now()+IV[p.lv]}
+    else{p.lv=Math.max(1,p.lv-1);p.due=Date.now()+10*MIN;p.wrong=(p.wrong||0)+1}
+    save();
+  }else if(!ok)sess.missed[st.id]=true;
+  const fb=$('#fb');const f=$('.foot');if(f)f.remove();
+  fb.className='fb '+(ok?'ok':'bad');
+  fb.innerHTML=`<div class="in2"><div class="vt">${ok?pick(['Correct!','Nice one!','Nailed it!','Spot on!']):'Not quite'}</div>${note?`<div style="margin-bottom:6px">${note}</div>`:''}
+    <div class="fw"><button class="say sm" data-act="say" data-id="${w.id}" aria-label="Play">${IC.spk}</button><span class="w">${esc(w.w)}</span><span class="ipa">/${esc(w.ipa)}/</span></div>
+    <div lang="vi">${esc(w.vi)}</div>${w.ex?`<div class="fx">${hiEx(w)}</div>`:'<div style="height:12px"></div>'}
+    ${!ok&&(st.qt==='type'||st.qt==='dictation')?`<label class="f" for="retype">Type it correctly to lock in the spelling</label><input class="typein" id="retype" style="font-size:20px;padding:10px;margin-bottom:12px" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">`:''}
+    <button class="btn wide" data-act="next" ${!ok&&(st.qt==='type'||st.qt==='dictation')?'disabled':''}>Continue</button></div>`;
+  requestAnimationFrame(()=>fb.classList.add('show'));
+  speak(w.w);
+  const rt=fb.querySelector('#retype');
+  if(rt){rt.addEventListener('input',()=>{const okk=tight(rt.value)===tight(w.w);fb.querySelector('[data-act=next]').disabled=!okk;rt.style.borderColor=okk?'var(--ok)':''});
+    rt.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const b=fb.querySelector('[data-act=next]');if(!b.disabled)b.click()}});
+    setTimeout(()=>rt.focus({preventScroll:true}),260)}
+  else setTimeout(()=>{const b=fb.querySelector('[data-act=next]');if(b)b.focus({preventScroll:true})},260);
+}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function checkTyped(){
+  if(!sess||sess.answered)return;const st=sess.steps[sess.i];const w=WORDS[st.id];
+  const v=$('#ans').value;if(!v.trim()){toast('Type your answer first.');return}
+  const a=tight(v),b=tight(w.w);
+  if(a===b)return answer(true);
+  const d=lev(a,b);
+  answer(false,d<=1&&b.length>=5?'So close, just one letter off. You typed: <b>'+esc(v)+'</b>':'You typed: <b>'+esc(v)+'</b>');
+}
+function finish(){
+  const s=sess;
+  if(s.kind==='learn'){
+    const now=Date.now();
+    s.learned.forEach(id=>{S.words[id]={lv:1,due:now+(s.missed[id]?10*MIN:H),added:now}});
+  }
+  if(s.learned?.length||s.kind==='review'){bumpStreak()}
+  save();
+  const total=s.right+s.wrong;
+  const head=s.kind==='learn'?(s.learned.length?`You learned ${plural(s.learned.length,'new word')}`:'You already knew these'):'Review complete';
+  const sub=s.kind==='learn'?(s.learned.length?'Your first review is in about an hour.':'Try another topic.'):`${plural(s.ups,'word')} moved up a level. ${s.wrongIds.length?'The ones you missed will come back in 10 minutes.':''}`;
+  const wr=s.wrongIds.map(id=>{const w=WORDS[id];return`<div class="row"><button class="say sm" data-act="say" data-id="${id}" aria-label="Play">${IC.spk}</button><div class="rw"><span class="w">${esc(w.w)}</span> <span class="ipa">/${esc(w.ipa)}/</span><div class="vi" lang="vi">${esc(w.vi)}</div></div></div>`}).join('');
+  $('#sess').innerHTML=`<div class="session"><div class="in done"><div class="sbar"><button class="x" data-act="quit" aria-label="Close">${IC.x}</button><div class="prog"><i style="width:100%"></i></div></div>
+    <div class="sheet"><h1>${head}</h1>${total?`<p class="lead">You got <b>${s.right}/${total}</b> right.</p>`:''}<p class="hint">${sub}</p></div>
+    ${wr?`<div class="sheet"><h2>Keep an eye on these</h2>${wr}</div>`:''}</div></div>
+    <div class="foot"><div class="in2"><button class="btn btn-primary" data-act="quit">Back to home</button></div></div>`;
+  sess={kind:'done'};
+}
+
+/* ============ EVENTS ============ */
+const ACT={
+  go:d=>{view=d.v;render();window.scrollTo(0,0)},
+  learn:d=>startLearn(d.t),
+  review:()=>startReview(),
+  focus:()=>startFocus(),
+  tip:()=>{S.settings.tipDone=true;save();render()},
+  say:d=>speak(WORDS[d.id].w,!!d.slow),
+  sayex:d=>speak(WORDS[d.id].ex),
+  mic:(d,b)=>startMic(d.id,b),
+  known:()=>{const st=sess.steps[sess.i];S.words[st.id]={lv:5,due:0,known:true,added:Date.now()};save();
+    if(sess.pool&&sess.pool.length){const nx=sess.pool.shift();sess.steps.push({t:'card',id:nx})}
+    sess.i++;renderSess()},
+  learnit:()=>{const lid=sess.steps[sess.i].id;sess.learned.push(lid);if(sess.kind==='focus')sess.batch.push(lid);sess.i++;renderSess()},
+  pick:d=>{if(sess.answered)return;const st=sess.steps[sess.i];const ok=d.id===st.id;
+    document.querySelectorAll('.opt').forEach(b=>{if(b.dataset.id===st.id)b.classList.add('right');else if(b.dataset.id===d.id)b.classList.add('wrong');b.disabled=true});
+    answer(ok)},
+  check:()=>checkTyped(),
+  giveup:()=>answer(false),
+  next:(d,b)=>{if(b&&b.disabled)return;sess.i++;renderSess();const se=$('.session');if(se)se.scrollTop=0},
+  quit:(d,b)=>{if(sess&&sess.kind==='learn'&&sess.learned.length&&!sess.quiz&&!armed(b)){toast('If you leave now, these words won’t be saved. Tap X again to leave.');return}closeSess()},
+  filter:d=>{bankF=d.f;render()},
+  del:(d,b)=>{if(!armed(b,'Tap again to delete'))return;S.custom=S.custom.filter(c=>c.id!==d.id);delete S.words[d.id];rebuildCustom();save();render()},
+  add:()=>{
+    const w=$('#nw-w').value.trim(),vi=$('#nw-vi').value.trim();
+    if(!w||!vi){toast('Add both the English word and its Vietnamese meaning.');return}
+    const id='mine/'+slug(w)+'-'+Date.now().toString(36);
+    S.custom.push({id,w,vi,ipa:$('#nw-ipa').value.trim().replace(/^\/|\/$/g,''),type:$('#nw-type')?.value||'',ex:$('#nw-ex').value.trim(),emo:''});
+    rebuildCustom();save();toast('Saved "'+w+'" to My Words.');render();
+  },
+  ai:async(d,b)=>{
+    const w=$('#nw-w').value.trim();if(!w){toast('Type the English word first.');return}
+    b.disabled=true;b.textContent='Filling in…';
+    try{
+      const r=await SAMPLE.json('You help a Vietnamese learner of English (B2 level, aiming for native-like fluency, wants to read literature and write). For the English word or phrase '+JSON.stringify(w)+', return ONLY a JSON object with keys: "ipa" (General American IPA, no slashes), "type" (noun, verb, adj, idiom, phrasal verb...), "vi" (short natural Vietnamese meaning, under 12 words), "ex" (one natural American English example sentence under 16 words that contains the exact text '+JSON.stringify(w)+'). No other text.',{modelTier:'quick'});
+      if(r&&typeof r==='object'){if(r.vi)$('#nw-vi').value=r.vi;if(r.ipa)$('#nw-ipa').value=String(r.ipa).replace(/^\/|\/$/g,'');if(r.ex)$('#nw-ex').value=r.ex;toast('Filled in. Check it, then tap Save word.')}
+    }catch(e){toast(e&&e.code==='not_granted'?'AI isn’t allowed on this page yet. Allow it when asked, then try again.':'The AI didn’t answer. Try again in a moment.')}
+    b.disabled=false;b.textContent='Auto-fill with AI';
+  },
+  test:()=>speak('The quiet meadow was wet with morning dew.'),
+  copycode:(d,b)=>{
+    const code=exportCode||plainCode();
+    const done=()=>{toast('Progress code copied. Paste it into the other app.');b.textContent='Copied ✓';setTimeout(()=>{if(b.isConnected)b.textContent='Copy progress code'},2500)};
+    const manual=()=>{const box=$('#codebox'),ta=$('#codeOut');if(box)box.open=true;if(ta){ta.value=code;ta.focus();ta.select()}toast('Select the code under Show the code and copy it.')};
+    try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(done,manual);return}}catch(e){}
+    manual();
+  },
+  loadcode:async(d,b)=>{
+    const ta=$('#codeIn'),txt=ta?ta.value:'';
+    if(!txt.trim()){toast('Paste a progress code first.');return}
+    b.disabled=true;
+    try{const n=mergeProgress(await readCode(txt));render();toast(n?'Progress loaded: '+plural(n,'word')+' updated.':'You already have everything in that code.')}
+    catch(e){toast(e&&e.message==='old'?'This browser is too old to read that code. Update it, then try again.':'That code doesn’t look right. Copy it again from the other app.')}
+    finally{if(b.isConnected)b.disabled=false}
+  },
+  reset:(d,b)=>{if(!armed(b,'Tap again to erase everything'))return;const keep=S.settings;S=blank();S.settings=keep;rebuildCustom();save();render();toast('All progress reset.')}
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const f=ACT[b.dataset.act];if(f)f(b.dataset,b)});
+document.addEventListener('input',e=>{
+  if(e.target.id==='bq'){bankQ=e.target.value;render()}
+  if(e.target.id==='rate'){S.settings.rate=+e.target.value;$('#ratev').textContent=S.settings.rate.toFixed(2)+'×'}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='rate'){save()}
+  if(e.target.id==='voice'){S.settings.voice=e.target.value;save();speak('Hello, this is how I sound.')}
+  if(e.target.id==='auto'){S.settings.auto=e.target.checked;save()}
+  if(e.target.id==='per'){S.settings.per=+e.target.value;save()}
+  if(e.target.id==='focusOn'){S.settings.focusOn=e.target.checked;save();toast(e.target.checked?'Next time you open the app, a session starts right away.':'Study before screen time is off.')}
+  if(e.target.id==='focusMin'){S.settings.focusMin=+e.target.value;save()}
+});
+setInterval(()=>{if(!sess&&view==='home')render()},60e3);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!sess)render()});
+render();
+if(S.settings.focusOn)startFocus();
+</script>
+<script>
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+  addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
+}
+</script>
+</body>
+</html>
