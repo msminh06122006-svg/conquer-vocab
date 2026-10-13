@@ -183,6 +183,8 @@ textarea.inp{display:block;box-sizing:border-box;min-height:76px;resize:vertical
 .pill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;margin-right:6px;background:var(--okbg);color:var(--ok);vertical-align:1px}
 .pill.off{background:var(--line);color:var(--soft)}
 .fillnote{font-size:13px;color:var(--soft);margin:10px 0 0}
+.linkbtn.armed{padding:2px 8px;border-radius:8px;text-decoration:none}
+.lastcheck.ok{color:var(--ok)}.lastcheck.bad{color:var(--bad)}.lastcheck .tech{color:var(--faint);font-size:12px;overflow-wrap:anywhere}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -668,10 +670,10 @@ function mergeProgress(data){
 function lsGet(k){try{return localStorage.getItem(k)||''}catch(e){return''}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
-const KEY_AI='cv-aikey',KEY_AIMODEL='cv-aimodel';
+const KEY_AI='cv-aikey',KEY_AIMODEL='cv-aimodel',KEY_AIMODELS='cv-aimodels',KEY_AILAST='cv-ailast',KEY_AIQ='cv-aiq';
 function aiKey(){return lsGet(KEY_AI)}
 function aiOn(){return!!(SAMPLE||aiKey())}
-const GEMINI_MODELS=['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-flash-lite-latest','gemini-3.8-flash','gemini-flash-latest','gemini-2.5-flash-lite'];
+const GEMINI_MODELS=['gemini-3.5-flash-lite','gemini-3.8-flash','gemini-3.1-flash-lite','gemini-3.6-flash','gemini-flash-lite-latest','gemini-flash-latest'];
 const FILL_SCHEMA={type:'OBJECT',properties:{ipa:{type:'STRING'},type:{type:'STRING'},vi:{type:'STRING'},ex:{type:'STRING'}},required:['ipa','type','vi','ex']};
 function fillPrompt(w,ctx){
   const W=JSON.stringify(w);
@@ -691,37 +693,115 @@ function parseLoose(t){
 }
 async function fetchT(url,opt,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||15000);try{return await fetch(url,Object.assign({},opt||{},{signal:c.signal}))}finally{clearTimeout(t)}}
 async function claudeFill(w,ctx){return await SAMPLE.json(fillPrompt(w,ctx)+'\nReturn ONLY the JSON object, no other text.',{modelTier:'quick'})}
+function shortMsg(m){m=String(m||'').replace(/https?:\/\/\S+/g,'').replace(/\s+/g,' ').trim();const i=m.search(/\.\s/);if(i>=30)m=m.slice(0,i+1);return m.length>180?m.slice(0,177)+'…':m}
+function aiWait(sec){return sec>90?Math.ceil(sec/60)+' minutes':sec+' seconds'}
+function aiProblem(e){
+  const k=e&&e.kind,m=shortMsg(e&&e.msg),said=m?' Google said: “'+m+'”':'';
+  if(k==='badkey')return'Google rejected this key.'+said;
+  if(k==='quota')return e.zero?'Google is giving this key 0 free AI requests right now. A brand-new key can take a few minutes to start working.':'This key has used up its free AI requests for now. '+(e.wait?'Try again in '+aiWait(e.wait)+'.':'They reset later.');
+  if(k==='billing')return(String(e.code||'').startsWith('402')?'This key’s Google project is on prepaid billing and has no credit left.':'This key’s Google project can’t use the free AI.')+said;
+  if(k==='location')return'Google doesn’t offer its AI where you’re connecting from. If you use a VPN, turn it off and try again.';
+  if(k==='notready')return'The Gemini API isn’t turned on for this key’s Google project. Make a key at aistudio.google.com/apikey instead, or wait a few minutes if you just turned it on.';
+  if(k==='denied')return'Google has blocked this key’s project.'+said;
+  if(k==='network')return'Couldn’t reach Google. Check your internet connection, and turn off any ad blocker or VPN for this site.';
+  if(k==='timeout')return'Google took too long to answer. Try again in a minute.';
+  if(k==='model')return'None of the AI models answered for this key.'+said;
+  if(k==='empty')return'Google sent back an empty answer'+(m?' ('+m+')':'')+'. Try again in a minute.';
+  return m?'Google said: “'+m+'”':'Google didn’t answer.';
+}
+function aiNote(ok,e){lsSet(KEY_AILAST,JSON.stringify(ok?{ok:true,at:Date.now()}:{ok:false,at:Date.now(),text:aiProblem(e),tech:[e&&e.code,e&&e.model].filter(Boolean).join(' · ')}))}
+function aiLast(){try{return JSON.parse(lsGet(KEY_AILAST)||'null')}catch(e){return null}}
+function aiLastHtml(){
+  const l=aiLast();if(!l||!l.at)return'';
+  const d=new Date(l.at),when=d.toDateString()===new Date().toDateString()?d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  return`<p class="hint lastcheck ${l.ok?'ok':'bad'}">Last check, ${esc(when)}: ${l.ok?'your key works.':esc(l.text||'it didn’t work.')}${!l.ok&&l.tech?` <span class="tech">(${esc(l.tech)})</span>`:''}</p>`;
+}
+/* Sort Google's answer into what the learner can do about it. */
+function geminiKind(st,er){
+  const all=String(er.message||'')+' '+(er.status||'')+' '+JSON.stringify(er.details||'');
+  if(st===429||er.status==='RESOURCE_EXHAUSTED')return'quota';
+  if(/API_KEY|API key|reported as leaked/i.test(all))return'badkey';
+  if(st===402||/free tier is not available|enable billing|billing account|prepay/i.test(all))return'billing';
+  if(/location is not supported/i.test(all))return'location';
+  if(/SERVICE_DISABLED|has not been used in project|it is disabled/i.test(all))return'notready';
+  if(/denied access|CONSUMER_SUSPENDED|has been suspended/i.test(all))return'denied';
+  if(st===404||/is not found for API version|not supported for generateContent|no longer available/i.test(all))return'model';
+  return'other';
+}
+const AI_STOP=['badkey','billing','location','notready','denied']; // the same for every model, so stop at once
+const AI_RANK={quota:5,other:4,empty:4,timeout:3,model:1}; // when every model fails, report the most useful reason
+async function geminiCall(m,body,key){
+  const url='https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent';
+  let q=lsGet(KEY_AIQ)==='1',swapped=false,res=null;
+  for(let t=0;t<4;t++){
+    const headers={'Content-Type':'application/json'};if(!q)headers['x-goog-api-key']=key;
+    try{res=await fetchT(q?url+'?key='+encodeURIComponent(key):url,{method:'POST',headers,body},30000)}
+    catch(e){
+      if(e&&e.name==='AbortError')return{fail:'timeout'};
+      if(!swapped){swapped=true;q=!q;continue} // the browser may have blocked the key header: try the other way once
+      return{fail:'network'};
+    }
+    if(swapped)lsSet(KEY_AIQ,q?'1':'0');
+    if([500,502,503,504].includes(res.status)&&t<2){await new Promise(r=>setTimeout(r,1500));continue}
+    break;
+  }
+  let data=null;try{data=await res.json()}catch(e){}
+  return{res,data};
+}
+/* Ask Google which models this key can use (checked every few days), so the app keeps working when models are retired. */
+async function geminiModels(key){
+  try{const c=JSON.parse(lsGet(KEY_AIMODELS)||'null');if(c&&Date.now()-c.at<5*864e5&&Array.isArray(c.list)&&c.list.length)return c.list}catch(e){}
+  let names=null;
+  try{
+    const q=lsGet(KEY_AIQ)==='1';
+    const res=await fetchT('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000'+(q?'&key='+encodeURIComponent(key):''),{headers:q?{}:{'x-goog-api-key':key}},15000);
+    if(res.ok){const data=await res.json();names=((data&&data.models)||[]).filter(x=>(x.supportedGenerationMethods||[]).includes('generateContent')).map(x=>String(x.name||'').replace(/^models\//,''))}
+  }catch(e){}
+  if(!names||!names.length)return GEMINI_MODELS;
+  const have=new Set(names),ver=n=>parseFloat((n.match(/^gemini-(\d+(?:\.\d+)?)-/)||[])[1])||0;
+  const fresh=names.filter(n=>/^gemini-\d+(\.\d+)?-flash(-lite)?$/.test(n)&&ver(n)>=3&&!GEMINI_MODELS.includes(n))
+    .sort((x,y)=>ver(y)-ver(x)||/lite/.test(y)-/lite/.test(x));
+  const list=[...GEMINI_MODELS.filter(m=>have.has(m)),...fresh,...GEMINI_MODELS.filter(m=>!have.has(m))];
+  lsSet(KEY_AIMODELS,JSON.stringify({at:Date.now(),list}));
+  return list;
+}
 async function geminiFill(w,ctx,key){
-  const saved=lsGet(KEY_AIMODEL);
-  const models=saved?[saved,...GEMINI_MODELS.filter(m=>m!==saved)]:GEMINI_MODELS;
+  const saved=lsGet(KEY_AIMODEL),list=await geminiModels(key);
+  const models=saved?[saved,...list.filter(m=>m!==saved)]:list;
   const prompt=fillPrompt(w,ctx);
   const bodies=[
     JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json',responseSchema:FILL_SCHEMA}}),
     JSON.stringify({contents:[{role:'user',parts:[{text:prompt+'\nReply with the JSON object only.'}]}]})
   ];
-  let last={kind:'other'};
+  let worst=null;
+  const keep=e=>{if(!worst||(AI_RANK[e.kind]||0)>(AI_RANK[worst.kind]||0))worst=e};
   for(const m of models){
     for(const body of bodies){
-      let res;
-      try{res=await fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body},25000)}
-      catch(e){throw{kind:'network'}}
-      let data=null;try{data=await res.json()}catch(e){}
+      const{res,data,fail}=await geminiCall(m,body,key);
+      if(fail==='network')throw{kind:'network',code:'no response',model:m};
+      if(fail==='timeout'){keep({kind:'timeout',code:'timed out',model:m});break}
       if(res.ok){
         const c=((data&&data.candidates)||[])[0];
         const txt=((c&&c.content&&c.content.parts)||[]).filter(p=>!p.thought).map(p=>p.text||'').join('');
         const r=parseLoose(txt);
         if(r){lsSet(KEY_AIMODEL,m);return r}
-        last={kind:'other'};continue;
+        const fb=(data&&data.promptFeedback&&data.promptFeedback.blockReason)||(c&&c.finishReason)||'';
+        keep({kind:'empty',msg:fb,code:'200',model:m});continue;
       }
-      const er=(data&&data.error)||{},msg=String(er.message||''),why=JSON.stringify(er.details||'');
-      if(/API_KEY|API key/.test(why+' '+msg))throw{kind:'badkey',msg};
-      if(res.status===429||er.status==='RESOURCE_EXHAUSTED'){last={kind:'quota',msg};break}
-      last={kind:'other',msg};
-      if(res.status!==400)break; // a 400 may be the JSON schema: retry this model without it
+      const er=(data&&data.error)||{},raw=String(er.message||''),kind=geminiKind(res.status,er);
+      const e={kind,msg:raw||('HTTP '+res.status),code:res.status+(er.status?' '+er.status:''),model:m};
+      if(kind==='quota'){
+        e.zero=/limit:\s*0\b/.test(raw);
+        const sec=(raw.match(/retry in ([\d.]+)\s*s/i)||JSON.stringify(er.details||'').match(/"retryDelay":"([\d.]+)s"/)||[])[1];
+        if(sec)e.wait=Math.ceil(+sec);
+      }
+      if(AI_STOP.includes(kind))throw e;
+      keep(e);
+      if(!(res.status===400&&kind==='other'))break; // a 400 may be the JSON schema: retry this model without it
     }
   }
-  if(saved&&last.kind!=='quota')lsDel(KEY_AIMODEL);
-  throw last;
+  if(!(worst&&worst.kind==='quota')){if(saved)lsDel(KEY_AIMODEL);lsDel(KEY_AIMODELS)}
+  throw worst||{kind:'other'};
 }
 /* Free dictionaries: Datamuse (definitions + American pronunciation), Wiktionary (examples),
    MyMemory (machine translation of the definition). */
@@ -857,8 +937,10 @@ function vSettings(){
   <p class="hint" style="margin-top:0">${aiKey()?`<span class="pill">AI on</span>Gemini fills in the Vietnamese meaning, IPA and an example sentence. Your key is saved on this device (ends in ${esc(aiKey().slice(-4))}).`:`<span class="pill off">AI off</span>Auto-fill uses free dictionaries: American IPA, an example and a machine-translated meaning. Add a free Gemini key for meanings that fit the sentence you found the word in.`}</p>
   <label class="f" for="aikey">${aiKey()?'Replace your key':'Gemini API key'}</label>
   <input id="aikey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste your key">
-  <div class="btns"><button class="btn btn-primary" data-act="savekey">Save key</button>${aiKey()?'<button class="btn btn-ghost" data-act="delkey">Remove key</button>':''}</div>
+  <div class="btns"><button class="btn btn-primary" data-act="savekey">Save key</button>${aiKey()?'<button class="btn btn-ghost" data-act="testkey">Test key</button>':''}</div>
+  ${aiKey()?aiLastHtml():''}
   <p class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>: sign in with Google, tap Create API key, then copy it. The key stays on this device and is never part of your progress code. Google may use what you send with a free key to improve its products.</p>
+  ${aiKey()?'<p class="hint"><button class="linkbtn" data-act="delkey">Remove key from this device</button></p>':''}
   </div>
   <div class="sheet"><h2>How reviews work</h2><p class="hint" style="margin-top:0">Every word has 5 levels. A new word starts at Level 1 and comes back for review after 1 hour. Each right answer moves it up a level and spaces out the next review: 1 day, 3 days, 7 days, then 21 days. A wrong answer drops it one level and brings it back in 10 minutes. Most questions make you type the word yourself, from its meaning or from what you hear, so you practice spelling. From Level 3 on, the first-letter hints disappear.</p></div>
   <div class="sheet"><h2>Move your progress</h2>
@@ -1089,9 +1171,9 @@ const ACT={
     const ctx=($('#nw-ex')?.value||'').trim();
     draft.w=w;draft.ex=ctx;
     b.disabled=true;b.textContent='Filling in…';
-    let r=null,src='',why='';
+    let r=null,src='',why='',aiErr=null;
     if(SAMPLE){try{r=await claudeFill(w,ctx);src='ai'}catch(e){why='other'}}
-    if(!r&&aiKey()){try{r=await geminiFill(w,ctx,aiKey());src='ai'}catch(e){why=(e&&e.kind)||'other'}}
+    if(!r&&aiKey()){try{r=await geminiFill(w,ctx,aiKey());src='ai';aiNote(true)}catch(e){why=(e&&e.kind)||'other';aiErr=e;aiNote(false,e)}}
     if(!r){try{r=await dictFill(w);src='dict'}catch(e){r=null}}
     const got=!!(r&&(r.vi||r.ipa||r.ex));
     if(got){
@@ -1100,8 +1182,8 @@ const ACT={
       if(r.ex&&!ctx)setField('ex',String(r.ex).trim());
       draft.type=String(r.type||'').trim().toLowerCase().slice(0,24);
     }
-    const lead={badkey:'Google rejected your AI key, so free dictionaries filled this in. Check the key in Settings.',quota:'Your free AI limit is used up for now, so free dictionaries filled this in.',network:'The AI couldn’t be reached, so free dictionaries filled this in.',other:'The AI didn’t answer, so free dictionaries filled this in.'}[why];
-    toast(!got?'Couldn’t find that. Type the meaning yourself.':src==='ai'?'Filled in by AI. Check it, then tap Save word.':lead||'Filled in from free dictionaries. Check the meaning, then tap Save word.');
+    const lead=why?(aiErr?aiProblem(aiErr):'The AI didn’t answer.')+' Free dictionaries filled this in.':'';
+    toast(!got?(aiErr?aiProblem(aiErr)+' ':'')+'Couldn’t find that. Type the meaning yourself.':src==='ai'?'Filled in by AI. Check it, then tap Save word.':lead||'Filled in from free dictionaries. Check the meaning, then tap Save word.');
     if(b.isConnected){b.disabled=false;b.textContent=aiOn()?'Auto-fill with AI':'Auto-fill'}
   },
   savekey:async(d,b)=>{
@@ -1109,16 +1191,24 @@ const ACT={
     if(!k){toast('Paste your key first.');return}
     if(!/^[\w.-]{20,}$/.test(k)){toast('That doesn’t look like an API key. Copy it again from AI Studio.');return}
     b.disabled=true;b.textContent='Checking…';
-    try{await geminiFill('hello','',k);lsSet(KEY_AI,k);toast('Key saved. Auto-fill now uses AI.')}
+    lsDel(KEY_AIMODEL);lsDel(KEY_AIMODELS);
+    try{await geminiFill('hello','',k);lsSet(KEY_AI,k);aiNote(true);toast('Key saved. It works, so Auto-fill now uses AI.')}
     catch(e){
-      const kind=e&&e.kind;
-      if(kind==='badkey'){toast('Google rejected this key. Copy it again from AI Studio.');if(b.isConnected){b.disabled=false;b.textContent='Save key'}return}
-      lsSet(KEY_AI,k);
-      toast(kind==='quota'?'Key saved. Its free limit is used up for now, so dictionaries fill in until it resets.':'Key saved, but the test didn’t go through. If Auto-fill doesn’t use AI, check the key in AI Studio.');
+      if(e&&e.kind==='badkey'){toast(aiProblem(e)+' Copy the key again from AI Studio.');if(b.isConnected){b.disabled=false;b.textContent='Save key'}return}
+      lsSet(KEY_AI,k);aiNote(false,e);
+      toast('Key saved, but the test didn’t work. '+aiProblem(e));
     }
     render();
   },
-  delkey:(d,b)=>{if(!armed(b,'Tap again to remove'))return;lsDel(KEY_AI);lsDel(KEY_AIMODEL);toast('Key removed. Auto-fill uses free dictionaries.');render()},
+  testkey:async(d,b)=>{
+    const k=aiKey();if(!k)return;
+    b.disabled=true;b.textContent='Testing…';
+    lsDel(KEY_AIMODELS);
+    try{await geminiFill('hello','',k);aiNote(true);toast('Your key works. Auto-fill uses AI.')}
+    catch(e){aiNote(false,e);toast(aiProblem(e))}
+    render();
+  },
+  delkey:(d,b)=>{if(!armed(b,'Tap again to remove'))return;[KEY_AI,KEY_AIMODEL,KEY_AIMODELS,KEY_AILAST,KEY_AIQ].forEach(lsDel);toast('Key removed. Auto-fill uses free dictionaries.');render()},
   test:()=>speak('The quiet meadow was wet with morning dew.'),
   copycode:(d,b)=>{
     const code=exportCode||plainCode();
