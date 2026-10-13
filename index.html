@@ -178,6 +178,11 @@ textarea.inp{display:block;box-sizing:border-box;min-height:76px;resize:vertical
 .timer.okt{color:var(--ok)}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:90%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
+.linkbtn{background:none;border:0;padding:0;margin:0;color:var(--tim);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.hint a{color:var(--tim);font-weight:600}
+.pill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;margin-right:6px;background:var(--okbg);color:var(--ok);vertical-align:1px}
+.pill.off{background:var(--line);color:var(--soft)}
+.fillnote{font-size:13px;color:var(--soft);margin:10px 0 0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -193,6 +198,7 @@ textarea.inp{display:block;box-sizing:border-box;min-height:76px;resize:vertical
 
 <script>
 let view='home',bankQ='',bankF='all',sess=null;
+let draft={w:'',vi:'',ipa:'',ex:'',type:''},addOpen=false;
 /* ============ WORD LIST (American English) ============
    One entry per line: word | IPA (General American) | part of speech | Vietnamese meaning | example sentence | emoji */
 const TOPICS_RAW = [
@@ -600,7 +606,7 @@ function armed(b,label){
   clearTimeout(b._t);b._t=setTimeout(()=>{if(!b.isConnected)return;b.dataset.armed='';b.classList.remove('armed');b.innerHTML=old},3500);
   return false;
 }
-function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2600)}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),Math.max(2600,String(t).length*55))}
 function plural(n,w){return n+' '+w+(n===1?'':'s')}
 function fmtIn(ms){if(ms<H)return plural(Math.max(1,Math.round(ms/MIN)),'minute');if(ms<D)return plural(Math.round(ms/H),'hour');return plural(Math.round(ms/D),'day')}
 function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
@@ -655,6 +661,123 @@ function mergeProgress(data){
   return n;
 }
 
+/* ============ AUTO-FILL FOR YOUR OWN WORDS ============ */
+/* With a free Gemini API key, AI writes the meaning, IPA and an example.
+   Without one, free dictionaries fill in what they can. The key never leaves this device
+   except in requests to Google, and it is not part of the progress code. */
+function lsGet(k){try{return localStorage.getItem(k)||''}catch(e){return''}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
+const KEY_AI='cv-aikey',KEY_AIMODEL='cv-aimodel';
+function aiKey(){return lsGet(KEY_AI)}
+function aiOn(){return!!(SAMPLE||aiKey())}
+const GEMINI_MODELS=['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-flash-lite-latest','gemini-3.8-flash','gemini-flash-latest','gemini-2.5-flash-lite'];
+const FILL_SCHEMA={type:'OBJECT',properties:{ipa:{type:'STRING'},type:{type:'STRING'},vi:{type:'STRING'},ex:{type:'STRING'}},required:['ipa','type','vi','ex']};
+function fillPrompt(w,ctx){
+  const W=JSON.stringify(w);
+  return 'You help a Vietnamese learner of American English (B2 level, aiming for native-like fluency; reads novels and wants to write).\n'+
+    'Word or phrase: '+W+'\n'+
+    (ctx?'The learner found it in this sentence: '+JSON.stringify(ctx)+'\nUse that sentence to choose the right sense.\n':'')+
+    'Return a JSON object with these keys:\n'+
+    '"ipa": General American IPA for '+W+', without slashes.\n'+
+    '"type": the part of speech in English (noun, verb, adjective, adverb, phrasal verb, idiom or phrase).\n'+
+    '"vi": a short, natural Vietnamese meaning (under 12 words) '+(ctx?'for the sense used in that sentence.':'for its most common sense. If two senses are both very common, give both, separated by "; ".')+'\n'+
+    '"ex": '+(ctx?'an empty string.':'one natural American English example sentence (under 16 words) that contains the exact text '+W+'.');
+}
+function parseLoose(t){
+  if(!t)return null;t=String(t).trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'');
+  const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)return null;
+  try{const o=JSON.parse(t.slice(a,b+1));return o&&typeof o==='object'?o:null}catch(e){return null}
+}
+async function fetchT(url,opt,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||15000);try{return await fetch(url,Object.assign({},opt||{},{signal:c.signal}))}finally{clearTimeout(t)}}
+async function claudeFill(w,ctx){return await SAMPLE.json(fillPrompt(w,ctx)+'\nReturn ONLY the JSON object, no other text.',{modelTier:'quick'})}
+async function geminiFill(w,ctx,key){
+  const saved=lsGet(KEY_AIMODEL);
+  const models=saved?[saved,...GEMINI_MODELS.filter(m=>m!==saved)]:GEMINI_MODELS;
+  const prompt=fillPrompt(w,ctx);
+  const bodies=[
+    JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json',responseSchema:FILL_SCHEMA}}),
+    JSON.stringify({contents:[{role:'user',parts:[{text:prompt+'\nReply with the JSON object only.'}]}]})
+  ];
+  let last={kind:'other'};
+  for(const m of models){
+    for(const body of bodies){
+      let res;
+      try{res=await fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body},25000)}
+      catch(e){throw{kind:'network'}}
+      let data=null;try{data=await res.json()}catch(e){}
+      if(res.ok){
+        const c=((data&&data.candidates)||[])[0];
+        const txt=((c&&c.content&&c.content.parts)||[]).filter(p=>!p.thought).map(p=>p.text||'').join('');
+        const r=parseLoose(txt);
+        if(r){lsSet(KEY_AIMODEL,m);return r}
+        last={kind:'other'};continue;
+      }
+      const er=(data&&data.error)||{},msg=String(er.message||''),why=JSON.stringify(er.details||'');
+      if(/API_KEY|API key/.test(why+' '+msg))throw{kind:'badkey',msg};
+      if(res.status===429||er.status==='RESOURCE_EXHAUSTED'){last={kind:'quota',msg};break}
+      last={kind:'other',msg};
+      if(res.status!==400)break; // a 400 may be the JSON schema: retry this model without it
+    }
+  }
+  if(saved&&last.kind!=='quota')lsDel(KEY_AIMODEL);
+  throw last;
+}
+/* Free dictionaries: Datamuse (definitions + American pronunciation), Wiktionary (examples),
+   MyMemory (machine translation of the definition). */
+const ARPA={AA:'ɑ',AE:'æ',AH:'ʌ',AO:'ɔ',AW:'aʊ',AY:'aɪ',B:'b',CH:'tʃ',D:'d',DH:'ð',EH:'ɛ',ER:'ɝ',EY:'eɪ',F:'f',G:'ɡ',HH:'h',IH:'ɪ',IY:'i',JH:'dʒ',K:'k',L:'l',M:'m',N:'n',NG:'ŋ',OW:'oʊ',OY:'ɔɪ',P:'p',R:'r',S:'s',SH:'ʃ',T:'t',TH:'θ',UH:'ʊ',UW:'u',V:'v',W:'w',Y:'j',Z:'z',ZH:'ʒ'};
+const ONSETS=new Set('pl pr bl br tr dr kl kr ɡl ɡr fl fr θr ʃr sp st sk sm sn sl sw spl spr str skr skw tw dw kw ɡw θw pj bj kj mj fj vj hj nj lj'.split(' '));
+function arpaToIpa(pron){
+  const ph=String(pron||'').trim().split(/\s+/).map(t=>{const m=t.match(/^([A-Z]+)([012])?$/);if(!m||!ARPA[m[1]])return null;
+    const st=m[2],sym=st==='0'&&m[1]==='AH'?'ə':st==='0'&&m[1]==='ER'?'ɚ':ARPA[m[1]];return{s:sym,v:st!==undefined,st}}).filter(Boolean);
+  if(!ph.length)return'';
+  const many=ph.filter(p=>p.v).length>1,out=[];
+  for(const p of ph){
+    if(p.v&&many&&(p.st==='1'||p.st==='2')){
+      let j=out.length;const cons=[];
+      while(j>0&&!out[j-1].v&&!out[j-1].mark){j--;cons.unshift(out[j].s)}
+      let k=0;if(j>0)while(k<cons.length-1&&!ONSETS.has(cons.slice(k).join('')))k++;
+      out.splice(j>0?j+k:0,0,{s:p.st==='1'?'ˈ':'ˌ',mark:true});
+    }
+    out.push(p);
+  }
+  return out.map(o=>o.s).join('');
+}
+function plainText(h){try{return new DOMParser().parseFromString(String(h),'text/html').documentElement.textContent.replace(/\s+/g,' ').trim()}catch(e){return String(h).replace(/<[^>]+>/g,'').trim()}}
+async function translateVi(q){
+  try{const r=await fetchT('https://api.mymemory.translated.net/get?q='+encodeURIComponent(q)+'&langpair=en|vi',{},12000);if(!r.ok)return'';
+    const j=await r.json();let t=plainText((j&&j.responseData&&j.responseData.translatedText)||'');
+    if(!t||/MYMEMORY|QUERY LENGTH|INVALID/i.test(t)||t.toLowerCase()===q.toLowerCase())return'';return t}catch(e){return''}
+}
+async function dictFill(w){
+  const q=w.trim(),lo=q.toLowerCase(),out={ipa:'',type:'',vi:'',ex:''};
+  const [dm,wk]=await Promise.allSettled([
+    fetchT('https://api.datamuse.com/words?sp='+encodeURIComponent(lo)+'&md=dpr&max=1',{},12000).then(r=>r.ok?r.json():[]),
+    fetchT('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(lo.replace(/ /g,'_')),{},12000).then(r=>r.ok?r.json():null)
+  ]);
+  const hit=dm.status==='fulfilled'&&Array.isArray(dm.value)?dm.value.find(x=>x&&String(x.word).toLowerCase()===lo):null;
+  let def='';
+  if(hit){
+    const pron=(hit.tags||[]).find(t=>t.startsWith('pron:'));if(pron)out.ipa=arpaToIpa(pron.slice(5));
+    const pos={n:'noun',v:'verb',adj:'adjective',adv:'adverb'};const tag=(hit.tags||[]).find(t=>pos[t]);if(tag)out.type=pos[tag];
+    const d=(hit.defs||[])[0];
+    if(d){const [p,txt]=d.split('\t');if(!out.type&&pos[p])out.type=pos[p];
+      def=String(txt||'').replace(/\[[^\]]*\]/g,'').replace(/^(\([^)]*\)\s*)+/,'').replace(/\s+/g,' ').trim().replace(/\.$/,'')}
+  }
+  if(wk.status==='fulfilled'&&wk.value&&Array.isArray(wk.value.en)){
+    outer:for(const e of wk.value.en)for(const d of (e.definitions||[]))for(const x of [...(d.parsedExamples||[]).map(p=>p.example),...(d.examples||[])]){
+      const t=plainText(x);if(t&&t.length<=160&&t.toLowerCase().includes(lo)){out.ex=t;break outer}
+    }
+  }
+  const src=def?def.replace(/^to /i,''):q;
+  let vi=await translateVi(src);
+  if(vi){vi=vi.replace(/[.。]$/,'');vi=vi.charAt(0).toLowerCase()+vi.slice(1);if(def&&def.length<=60)vi+=' ('+def.charAt(0).toLowerCase()+def.slice(1)+')'}
+  else if(def)vi=def;
+  out.vi=vi;
+  return out;
+}
+function setField(k,v){draft[k]=v;const el=document.getElementById('nw-'+k);if(el)el.value=v}
+
 /* ============ LEARNING STATE ============ */
 function prog(id){return S.words[id]}
 function isNew(id){return !S.words[id]}
@@ -702,17 +825,18 @@ function vBank(){
   const chips=[['all','All'],['new','New'],['1','Level 1'],['2','Level 2'],['3','Level 3'],['4','Level 4'],['5','Level 5'],['known','Known']].map(([v,l])=>`<button class="chip" data-act="filter" data-f="${v}" aria-pressed="${bankF===v}">${l}</button>`).join('');
   const rows=ids.slice(0,300).map(id=>{const w=WORDS[id],p=prog(id);
     const b=!p?'<span class="badge b0">New</span>':p.known?'<span class="badge bk">Known</span>':`<span class="badge b${p.lv}">Lv ${p.lv}</span>`;
-    return`<div class="row"><button class="say sm" data-act="say" data-id="${id}" aria-label="Play ${esc(w.w)}">${IC.spk}</button><div class="rw"><span class="w">${esc(w.w)}</span> <span class="ipa">/${esc(w.ipa)}/</span><div class="vi" lang="vi">${esc(w.vi)}</div>${w.ex?`<div class="ex">${hiEx(w)}</div>`:''}${w.topic==='mine'?`<button class="chip" style="margin-top:6px" data-act="del" data-id="${id}">Delete word</button>`:''}</div>${b}</div>`}).join('')||'<p class="empty">No words here yet.</p>';
-  const ai=SAMPLE?`<button class="btn btn-ghost" data-act="ai" id="aibtn">Auto-fill with AI</button>`:'';
+    return`<div class="row"><button class="say sm" data-act="say" data-id="${id}" aria-label="Play ${esc(w.w)}">${IC.spk}</button><div class="rw"><span class="w">${esc(w.w)}</span> ${w.ipa?`<span class="ipa">/${esc(w.ipa)}/</span>`:''}<div class="vi" lang="vi">${esc(w.vi)}</div>${w.ex?`<div class="ex">${hiEx(w)}</div>`:''}${w.topic==='mine'?`<button class="chip" style="margin-top:6px" data-act="del" data-id="${id}">Delete word</button>`:''}</div>${b}</div>`}).join('')||'<p class="empty">No words here yet.</p>';
+  const fill=`<button class="btn btn-ghost" data-act="ai" id="aibtn">${aiOn()?'Auto-fill with AI':'Auto-fill'}</button>`;
   return vHeader()+`<input class="search" id="bq" type="search" placeholder="Search words or Vietnamese meanings" value="${esc(bankQ)}" autocomplete="off" autocapitalize="off" spellcheck="false">
   <div class="chips">${chips}</div>
-  <div class="sheet"><details ${S.custom.length?'':'open'}><summary>+ Add your own word</summary>
-    <p class="hint">Found a new word in a book? Add it here and you’ll learn and review it like every other word.</p>
-    <label class="f" for="nw-w">English word or phrase</label><input id="nw-w" autocapitalize="off" autocomplete="off" spellcheck="false">
-    <label class="f" for="nw-vi">Vietnamese meaning</label><input id="nw-vi">
-    <label class="f" for="nw-ipa">IPA pronunciation (optional)</label><input id="nw-ipa" autocapitalize="off">
-    <label class="f" for="nw-ex">Example sentence (optional)</label><input id="nw-ex" autocapitalize="off">
-    <div class="btns">${ai}<button class="btn btn-primary" data-act="add">Save word</button></div>
+  <div class="sheet"><details id="addbox" ${addOpen||!S.custom.length||draft.w?'open':''}><summary>+ Add your own word</summary>
+    <p class="hint">Found a new word in a book? Paste the sentence it came from under Example, then tap Auto-fill to get the meaning that fits.</p>
+    <label class="f" for="nw-w">English word or phrase</label><input id="nw-w" value="${esc(draft.w)}" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <label class="f" for="nw-ex">Example sentence (optional)</label><input id="nw-ex" value="${esc(draft.ex)}" autocapitalize="off">
+    <label class="f" for="nw-vi">Vietnamese meaning</label><input id="nw-vi" value="${esc(draft.vi)}">
+    <label class="f" for="nw-ipa">IPA pronunciation (optional)</label><input id="nw-ipa" value="${esc(draft.ipa)}" autocapitalize="off">
+    <div class="btns">${fill}<button class="btn btn-primary" data-act="add">Save word</button></div>
+    ${aiOn()?'':'<p class="fillnote">Auto-fill is using free dictionaries. <button class="linkbtn" data-act="go" data-v="settings">Add a free AI key</button> for meanings that fit your sentence.</p>'}
   </details></div>
   <div class="sheet">${rows}</div>`;
 }
@@ -728,6 +852,13 @@ function vSettings(){
   <div class="sheet"><h2>Study before screen time</h2>
   <div class="set"><div><div>Start a session when the app opens</div><div class="d">The exit button stays hidden until time is up</div></div><input type="checkbox" id="focusOn" ${S.settings.focusOn?'checked':''} style="width:22px;height:22px;accent-color:var(--tim)"></div>
   <div class="set"><div>Session length</div><select class="inp" id="focusMin">${[3,5,10,15].map(n=>`<option value="${n}" ${n==S.settings.focusMin?'selected':''}>${n} minutes</option>`).join('')}</select></div>
+  </div>
+  <div class="sheet"><h2>Auto-fill for your own words</h2>
+  <p class="hint" style="margin-top:0">${aiKey()?`<span class="pill">AI on</span>Gemini fills in the Vietnamese meaning, IPA and an example sentence. Your key is saved on this device (ends in ${esc(aiKey().slice(-4))}).`:`<span class="pill off">AI off</span>Auto-fill uses free dictionaries: American IPA, an example and a machine-translated meaning. Add a free Gemini key for meanings that fit the sentence you found the word in.`}</p>
+  <label class="f" for="aikey">${aiKey()?'Replace your key':'Gemini API key'}</label>
+  <input id="aikey" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste your key">
+  <div class="btns"><button class="btn btn-primary" data-act="savekey">Save key</button>${aiKey()?'<button class="btn btn-ghost" data-act="delkey">Remove key</button>':''}</div>
+  <p class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>: sign in with Google, tap Create API key, then copy it. The key stays on this device and is never part of your progress code. Google may use what you send with a free key to improve its products.</p>
   </div>
   <div class="sheet"><h2>How reviews work</h2><p class="hint" style="margin-top:0">Every word has 5 levels. A new word starts at Level 1 and comes back for review after 1 hour. Each right answer moves it up a level and spaces out the next review: 1 day, 3 days, 7 days, then 21 days. A wrong answer drops it one level and brings it back in 10 minutes. Most questions make you type the word yourself, from its meaning or from what you hear, so you practice spelling. From Level 3 on, the first-letter hints disappear.</p></div>
   <div class="sheet"><h2>Move your progress</h2>
@@ -839,7 +970,7 @@ function renderSess(){
   if(st.t==='card'){
     body=`<div class="sheet card">${w.emo?`<div class="emo" aria-hidden="true">${w.emo}</div>`:''}
       <div class="word ${w.w.length>14?'md':''}">${esc(w.w)}</div>
-      <div><span class="ipa">/${esc(w.ipa)}/</span><span class="type">${esc(w.type)}</span></div>
+      <div>${w.ipa?`<span class="ipa">/${esc(w.ipa)}/</span>`:''}${w.type?`<span class="type">${esc(w.type)}</span>`:''}</div>
       <div class="sayrow"><button class="say" data-act="say" data-id="${w.id}" aria-label="Play">${IC.spk}</button><button class="say" data-act="say" data-id="${w.id}" data-slow="1" aria-label="Play slowly">${IC.slow}</button></div>
       <div class="mean" lang="vi">${esc(w.vi)}</div>
       ${w.ex?`<div class="exbox"><button class="say sm" data-act="sayex" data-id="${w.id}" aria-label="Play the example sentence">${IC.spk}</button><span>${hiEx(w)}</span></div>`:''}
@@ -853,7 +984,7 @@ function renderSess(){
     }
     const opts=(field,cls)=>`<div class="opts">${st.opts.map(id=>`<button class="opt ${cls}"${field==='vi'?' lang="vi"':''} data-act="pick" data-id="${id}">${esc(WORDS[id][field])}</button>`).join('')}</div>`;
     const plv=st.learnQ||sess.kind==='learn'?1:(prog(st.id)?.lv||1);const hintw=w.w.split('').map((ch,i)=>ch===' '?'\u00a0\u00a0':/[-']/.test(ch)?ch:((i===0||w.w[i-1]===' ')&&plv<3)?ch:'_').join('');
-    if(st.qt==='mean')body=`<p class="q">What does this mean?</p><div class="sheet card"><div class="word ${w.w.length>14?'md':''}">${esc(w.w)}</div><div class="ipa">/${esc(w.ipa)}/</div><div class="sayrow"><button class="say" data-act="say" data-id="${w.id}" aria-label="Play">${IC.spk}</button></div></div>${opts('vi','')}`;
+    if(st.qt==='mean')body=`<p class="q">What does this mean?</p><div class="sheet card"><div class="word ${w.w.length>14?'md':''}">${esc(w.w)}</div>${w.ipa?`<div class="ipa">/${esc(w.ipa)}/</div>`:''}<div class="sayrow"><button class="say" data-act="say" data-id="${w.id}" aria-label="Play">${IC.spk}</button></div></div>${opts('vi','')}`;
     else if(st.qt==='listen')body=`<p class="q">Listen and pick the word</p><div class="sheet card"><button class="say bigsay" data-act="say" data-id="${w.id}" aria-label="Play again">${IC.spk}</button><button class="chip" data-act="say" data-id="${w.id}" data-slow="1">Play slowly</button></div>${opts('w','en')}`;
     else if(st.qt==='word')body=`<p class="q">What’s this in English?</p><div class="sheet card">${w.emo?`<div class="emo" aria-hidden="true">${w.emo}</div>`:''}<div class="mean" lang="vi">${esc(w.vi)}</div></div>${opts('w','en')}`;
     else if(st.qt==='blank'){const m=w.ex.match(reRx(w.w));const i=m.index+m[1].length;body=`<p class="q">Fill in the blank</p><div class="sheet card"><div class="blank">${esc(w.ex.slice(0,i))}<u>&nbsp;</u>${esc(w.ex.slice(i+m[2].length))}</div><p class="hint" style="text-align:left" lang="vi">${esc(w.vi)}</p></div>${opts('w','en')}`}
@@ -881,7 +1012,7 @@ function answer(ok,note){
   const fb=$('#fb');const f=$('.foot');if(f)f.remove();
   fb.className='fb '+(ok?'ok':'bad');
   fb.innerHTML=`<div class="in2"><div class="vt">${ok?pick(['Correct!','Nice one!','Nailed it!','Spot on!']):'Not quite'}</div>${note?`<div style="margin-bottom:6px">${note}</div>`:''}
-    <div class="fw"><button class="say sm" data-act="say" data-id="${w.id}" aria-label="Play">${IC.spk}</button><span class="w">${esc(w.w)}</span><span class="ipa">/${esc(w.ipa)}/</span></div>
+    <div class="fw"><button class="say sm" data-act="say" data-id="${w.id}" aria-label="Play">${IC.spk}</button><span class="w">${esc(w.w)}</span>${w.ipa?`<span class="ipa">/${esc(w.ipa)}/</span>`:''}</div>
     <div lang="vi">${esc(w.vi)}</div>${w.ex?`<div class="fx">${hiEx(w)}</div>`:'<div style="height:12px"></div>'}
     ${!ok&&(st.qt==='type'||st.qt==='dictation')?`<label class="f" for="retype">Type it correctly to lock in the spelling</label><input class="typein" id="retype" style="font-size:20px;padding:10px;margin-bottom:12px" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">`:''}
     <button class="btn wide" data-act="next" ${!ok&&(st.qt==='type'||st.qt==='dictation')?'disabled':''}>Continue</button></div>`;
@@ -913,7 +1044,7 @@ function finish(){
   const total=s.right+s.wrong;
   const head=s.kind==='learn'?(s.learned.length?`You learned ${plural(s.learned.length,'new word')}`:'You already knew these'):'Review complete';
   const sub=s.kind==='learn'?(s.learned.length?'Your first review is in about an hour.':'Try another topic.'):`${plural(s.ups,'word')} moved up a level. ${s.wrongIds.length?'The ones you missed will come back in 10 minutes.':''}`;
-  const wr=s.wrongIds.map(id=>{const w=WORDS[id];return`<div class="row"><button class="say sm" data-act="say" data-id="${id}" aria-label="Play">${IC.spk}</button><div class="rw"><span class="w">${esc(w.w)}</span> <span class="ipa">/${esc(w.ipa)}/</span><div class="vi" lang="vi">${esc(w.vi)}</div></div></div>`}).join('');
+  const wr=s.wrongIds.map(id=>{const w=WORDS[id];return`<div class="row"><button class="say sm" data-act="say" data-id="${id}" aria-label="Play">${IC.spk}</button><div class="rw"><span class="w">${esc(w.w)}</span> ${w.ipa?`<span class="ipa">/${esc(w.ipa)}/</span>`:''}<div class="vi" lang="vi">${esc(w.vi)}</div></div></div>`}).join('');
   $('#sess').innerHTML=`<div class="session"><div class="in done"><div class="sbar"><button class="x" data-act="quit" aria-label="Close">${IC.x}</button><div class="prog"><i style="width:100%"></i></div></div>
     <div class="sheet"><h1>${head}</h1>${total?`<p class="lead">You got <b>${s.right}/${total}</b> right.</p>`:''}<p class="hint">${sub}</p></div>
     ${wr?`<div class="sheet"><h2>Keep an eye on these</h2>${wr}</div>`:''}</div></div>
@@ -948,18 +1079,46 @@ const ACT={
     const w=$('#nw-w').value.trim(),vi=$('#nw-vi').value.trim();
     if(!w||!vi){toast('Add both the English word and its Vietnamese meaning.');return}
     const id='mine/'+slug(w)+'-'+Date.now().toString(36);
-    S.custom.push({id,w,vi,ipa:$('#nw-ipa').value.trim().replace(/^\/|\/$/g,''),type:$('#nw-type')?.value||'',ex:$('#nw-ex').value.trim(),emo:''});
+    S.custom.push({id,w,vi,ipa:$('#nw-ipa').value.trim().replace(/^\/|\/$/g,''),type:(draft.type||'').trim(),ex:$('#nw-ex').value.trim(),emo:''});
+    draft={w:'',vi:'',ipa:'',ex:'',type:''};addOpen=true;
     rebuildCustom();save();toast('Saved "'+w+'" to My Words.');render();
   },
   ai:async(d,b)=>{
-    const w=$('#nw-w').value.trim();if(!w){toast('Type the English word first.');return}
+    const w=($('#nw-w')?.value||'').trim();if(!w){toast('Type the English word first.');return}
+    if(navigator.onLine===false){toast('You’re offline. Connect to the internet to auto-fill.');return}
+    const ctx=($('#nw-ex')?.value||'').trim();
+    draft.w=w;draft.ex=ctx;
     b.disabled=true;b.textContent='Filling in…';
-    try{
-      const r=await SAMPLE.json('You help a Vietnamese learner of English (B2 level, aiming for native-like fluency, wants to read literature and write). For the English word or phrase '+JSON.stringify(w)+', return ONLY a JSON object with keys: "ipa" (General American IPA, no slashes), "type" (noun, verb, adj, idiom, phrasal verb...), "vi" (short natural Vietnamese meaning, under 12 words), "ex" (one natural American English example sentence under 16 words that contains the exact text '+JSON.stringify(w)+'). No other text.',{modelTier:'quick'});
-      if(r&&typeof r==='object'){if(r.vi)$('#nw-vi').value=r.vi;if(r.ipa)$('#nw-ipa').value=String(r.ipa).replace(/^\/|\/$/g,'');if(r.ex)$('#nw-ex').value=r.ex;toast('Filled in. Check it, then tap Save word.')}
-    }catch(e){toast(e&&e.code==='not_granted'?'AI isn’t allowed on this page yet. Allow it when asked, then try again.':'The AI didn’t answer. Try again in a moment.')}
-    b.disabled=false;b.textContent='Auto-fill with AI';
+    let r=null,src='',why='';
+    if(SAMPLE){try{r=await claudeFill(w,ctx);src='ai'}catch(e){why='other'}}
+    if(!r&&aiKey()){try{r=await geminiFill(w,ctx,aiKey());src='ai'}catch(e){why=(e&&e.kind)||'other'}}
+    if(!r){try{r=await dictFill(w);src='dict'}catch(e){r=null}}
+    const got=!!(r&&(r.vi||r.ipa||r.ex));
+    if(got){
+      if(r.vi)setField('vi',String(r.vi).trim());
+      if(r.ipa)setField('ipa',String(r.ipa).replace(/^[\/\[]+|[\/\]]+$/g,'').trim());
+      if(r.ex&&!ctx)setField('ex',String(r.ex).trim());
+      draft.type=String(r.type||'').trim().toLowerCase().slice(0,24);
+    }
+    const lead={badkey:'Google rejected your AI key, so free dictionaries filled this in. Check the key in Settings.',quota:'Your free AI limit is used up for now, so free dictionaries filled this in.',network:'The AI couldn’t be reached, so free dictionaries filled this in.',other:'The AI didn’t answer, so free dictionaries filled this in.'}[why];
+    toast(!got?'Couldn’t find that. Type the meaning yourself.':src==='ai'?'Filled in by AI. Check it, then tap Save word.':lead||'Filled in from free dictionaries. Check the meaning, then tap Save word.');
+    if(b.isConnected){b.disabled=false;b.textContent=aiOn()?'Auto-fill with AI':'Auto-fill'}
   },
+  savekey:async(d,b)=>{
+    const k=($('#aikey')?.value||'').replace(/\s+/g,'');
+    if(!k){toast('Paste your key first.');return}
+    if(!/^[\w.-]{20,}$/.test(k)){toast('That doesn’t look like an API key. Copy it again from AI Studio.');return}
+    b.disabled=true;b.textContent='Checking…';
+    try{await geminiFill('hello','',k);lsSet(KEY_AI,k);toast('Key saved. Auto-fill now uses AI.')}
+    catch(e){
+      const kind=e&&e.kind;
+      if(kind==='badkey'){toast('Google rejected this key. Copy it again from AI Studio.');if(b.isConnected){b.disabled=false;b.textContent='Save key'}return}
+      lsSet(KEY_AI,k);
+      toast(kind==='quota'?'Key saved. Its free limit is used up for now, so dictionaries fill in until it resets.':'Key saved, but the test didn’t go through. If Auto-fill doesn’t use AI, check the key in AI Studio.');
+    }
+    render();
+  },
+  delkey:(d,b)=>{if(!armed(b,'Tap again to remove'))return;lsDel(KEY_AI);lsDel(KEY_AIMODEL);toast('Key removed. Auto-fill uses free dictionaries.');render()},
   test:()=>speak('The quiet meadow was wet with morning dew.'),
   copycode:(d,b)=>{
     const code=exportCode||plainCode();
@@ -981,6 +1140,7 @@ const ACT={
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const f=ACT[b.dataset.act];if(f)f(b.dataset,b)});
 document.addEventListener('input',e=>{
   if(e.target.id==='bq'){bankQ=e.target.value;render()}
+  const nid=e.target.id||'';if(nid.startsWith('nw-')){const k=nid.slice(3);if(k in draft){draft[k]=e.target.value;if(k==='w')draft.type=''}}
   if(e.target.id==='rate'){S.settings.rate=+e.target.value;$('#ratev').textContent=S.settings.rate.toFixed(2)+'×'}
 });
 document.addEventListener('change',e=>{
@@ -993,6 +1153,7 @@ document.addEventListener('change',e=>{
 });
 setInterval(()=>{if(!sess&&view==='home')render()},60e3);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!sess)render()});
+document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='addbox')addOpen=e.target.open},true);
 render();
 if(S.settings.focusOn)startFocus();
 </script>
