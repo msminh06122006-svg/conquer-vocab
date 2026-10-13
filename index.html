@@ -59,6 +59,7 @@ h2{font-size:17px;font-weight:600;margin:4px 0 10px}
 .lead{font-size:18px;margin:0 0 14px;line-height:1.45}
 .lead b{color:var(--tim)}
 .hint{color:var(--soft);font-size:14px;margin:6px 0 0}
+.fillstat{min-height:1.4em;font-size:13px}.fillstat.bad{color:var(--bad)}
 .btn{border:0;border-radius:14px;padding:13px 18px;min-height:50px;font-weight:600;font-size:16px;transition:transform .08s}
 .btn:active{transform:translateY(2px)}
 .btn-primary{background:var(--tim);color:#fff;box-shadow:0 3px 0 var(--tim2)}
@@ -829,8 +830,24 @@ async function translateVi(q){
     const j=await r.json();let t=plainText((j&&j.responseData&&j.responseData.translatedText)||'');
     if(!t||/MYMEMORY|QUERY LENGTH|INVALID/i.test(t)||t.toLowerCase()===q.toLowerCase())return'';return t}catch(e){return''}
 }
+/* Google Translate's free endpoint: the main translation plus the common dictionary meanings. */
+async function googleVi(q){
+  try{
+    const r=await fetchT('https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&dt=bd&q='+encodeURIComponent(q),{},10000);
+    if(!r.ok)return null;const j=await r.json();
+    const main=((j&&j[0])||[]).map(s=>s&&s[0]||'').join('').trim();
+    const seen=new Set(),terms=[];let pos='';
+    const add=t=>{t=String(t||'').trim();const k=t.toLowerCase();if(t&&!seen.has(k)){seen.add(k);terms.push(t)}};
+    if(main&&main.toLowerCase()!==q.toLowerCase())add(main);
+    if(Array.isArray(j&&j[1]))for(const g of j[1]){if(!pos&&g&&g[0])pos=String(g[0]);((g&&g[1])||[]).slice(0,3).forEach(add);if(terms.length>=4)break}
+    const vi=terms.slice(0,4).join(', ');
+    const P={noun:'noun',verb:'verb',adjective:'adjective',adverb:'adverb',phrase:'phrase'};
+    return vi?{vi,type:P[pos]||''}:null;
+  }catch(e){return null}
+}
 async function dictFill(w){
   const q=w.trim(),lo=q.toLowerCase(),out={ipa:'',type:'',vi:'',ex:''};
+  const gv=googleVi(q);
   const [dm,wk]=await Promise.allSettled([
     fetchT('https://api.datamuse.com/words?sp='+encodeURIComponent(lo)+'&md=dpr&max=1',{},12000).then(r=>r.ok?r.json():[]),
     fetchT('https://en.wiktionary.org/api/rest_v1/page/definition/'+encodeURIComponent(lo.replace(/ /g,'_')),{},12000).then(r=>r.ok?r.json():null)
@@ -849,6 +866,8 @@ async function dictFill(w){
       const t=plainText(x);if(t&&t.length<=160&&t.toLowerCase().includes(lo)){out.ex=t;break outer}
     }
   }
+  const g=await gv;
+  if(g){out.vi=g.vi;if(!out.type)out.type=g.type;return out}
   const src=def?def.replace(/^to /i,''):q;
   let vi=await translateVi(src);
   if(vi){vi=vi.replace(/[.。]$/,'');vi=vi.charAt(0).toLowerCase()+vi.slice(1);if(def&&def.length<=60)vi+=' ('+def.charAt(0).toLowerCase()+def.slice(1)+')'}
@@ -857,6 +876,56 @@ async function dictFill(w){
   return out;
 }
 function setField(k,v){draft[k]=v;const el=document.getElementById('nw-'+k);if(el)el.value=v}
+/* Translate a new word on its own: runs a moment after you stop typing, and again on Save if needed.
+   Fields you typed yourself are never overwritten; fields it filled are replaced when the word changes. */
+let fillBusy=null,fillTimer=0,fillSeq=0;
+function fillStat(t,bad){const el=$('#fillstat');if(el){el.textContent=t||'';el.classList.toggle('bad',!!bad)}}
+function fillBtn(busy){const b=$('#aibtn');if(b){b.disabled=busy;b.textContent=busy?'Translating…':aiOn()?'Auto-fill with AI':'Auto-fill'}}
+function clearAuto(){['vi','ipa','ex'].forEach(k=>{const a='auto'+k.charAt(0).toUpperCase()+k.slice(1);if(draft[a]){setField(k,'');draft[a]=false}});draft.type='';draft.autoFor=''}
+function queueFill(){
+  clearTimeout(fillTimer);
+  const w=(draft.w||'').trim();
+  if(draft.autoFor&&draft.autoFor!==w)clearAuto();
+  if(!w||w.length<2||draft.autoFor===w){fillStat('');return}
+  if(draft.vi&&!draft.autoVi){fillStat('');return} // you typed the meaning yourself
+  fillStat('Will translate when you stop typing…');
+  fillTimer=setTimeout(()=>{if(navigator.onLine!==false)fillWord(w,{})},900);
+}
+async function fillWord(w,o){
+  o=o||{};
+  if(fillBusy&&fillBusy.w===w)return fillBusy.p;
+  const seq=++fillSeq;
+  const run=(async()=>{
+    const ctx=draft.autoEx?'':(($('#nw-ex')?.value)||'').trim();
+    fillStat('Translating “'+w+'”…');fillBtn(true);
+    let r=null,src='',why='',aiErr=null;
+    if(SAMPLE){try{r=await claudeFill(w,ctx);src='ai'}catch(e){why='other'}}
+    if(!r&&aiKey()){try{r=await geminiFill(w,ctx,aiKey());src='ai';aiNote(true)}catch(e){why=(e&&e.kind)||'other';aiErr=e;aiNote(false,e)}}
+    if(!r){try{r=await dictFill(w);src='dict'}catch(e){r=null}}
+    if(seq!==fillSeq)return false;
+    fillBtn(false);
+    const cur=(($('#nw-w')?.value)||draft.w||'').trim();
+    if(cur!==w){fillStat('');return false} // the word changed while we were translating
+    const got=!!(r&&(r.vi||r.ipa||r.ex));
+    if(got){
+      const mine=k=>!o.force&&draft[k]&&!draft['auto'+k.charAt(0).toUpperCase()+k.slice(1)]; // typed by you
+      if(r.vi&&!mine('vi')){setField('vi',String(r.vi).trim());draft.autoVi=true}
+      if(r.ipa&&!(draft.ipa&&!draft.autoIpa)){setField('ipa',String(r.ipa).replace(/^[\/\[]+|[\/\]]+$/g,'').trim());draft.autoIpa=true}
+      if(r.ex&&!ctx){setField('ex',String(r.ex).trim());draft.autoEx=true}
+      draft.type=String(r.type||'').trim().toLowerCase().slice(0,24);
+      draft.autoFor=w;
+      const fell=why?(aiErr?aiProblem(aiErr)+' ':'The AI didn’t answer. ')+'Used Google Translate instead. ':'';
+      fillStat(fell+(src==='ai'?'Translated by AI.':'Translated.')+' Check it, then tap Save word (or press Enter).',!!why);
+      if(o.force&&!o.quiet&&why)toast(fell+'Check the meaning, then tap Save word.');
+    }else{
+      fillStat((aiErr?aiProblem(aiErr)+' ':'')+'Couldn’t translate that. Type the meaning yourself.',true);
+      if(!o.quiet&&o.force)toast('Couldn’t translate that. Type the meaning yourself.');
+    }
+    return got;
+  })();
+  fillBusy={w,p:run};
+  try{return await run}finally{if(fillBusy&&fillBusy.p===run)fillBusy=null}
+}
 
 /* ============ LEARNING STATE ============ */
 function prog(id){return S.words[id]}
@@ -910,8 +979,9 @@ function vBank(){
   return vHeader()+`<input class="search" id="bq" type="search" placeholder="Search words or Vietnamese meanings" value="${esc(bankQ)}" autocomplete="off" autocapitalize="off" spellcheck="false">
   <div class="chips">${chips}</div>
   <div class="sheet"><details id="addbox" ${addOpen||!S.custom.length||draft.w?'open':''}><summary>+ Add your own word</summary>
-    <p class="hint">Found a new word in a book? Paste the sentence it came from under Example, then tap Auto-fill to get the meaning that fits.</p>
-    <label class="f" for="nw-w">English word or phrase</label><input id="nw-w" value="${esc(draft.w)}" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <p class="hint">Just type the English word. The Vietnamese meaning, IPA and an example fill in by themselves. Tap Save word or press Enter.</p>
+    <label class="f" for="nw-w">English word or phrase</label><input id="nw-w" value="${esc(draft.w)}" autocapitalize="off" autocomplete="off" spellcheck="false" enterkeyhint="done">
+    <p class="hint fillstat" id="fillstat" aria-live="polite"></p>
     <label class="f" for="nw-ex">Example sentence (optional)</label><input id="nw-ex" value="${esc(draft.ex)}" autocapitalize="off">
     <label class="f" for="nw-vi">Vietnamese meaning</label><input id="nw-vi" value="${esc(draft.vi)}">
     <label class="f" for="nw-ipa">IPA pronunciation (optional)</label><input id="nw-ipa" value="${esc(draft.ipa)}" autocapitalize="off">
@@ -1157,34 +1227,28 @@ const ACT={
   quit:(d,b)=>{if(sess&&sess.kind==='learn'&&sess.learned.length&&!sess.quiz&&!armed(b)){toast('If you leave now, these words won’t be saved. Tap X again to leave.');return}closeSess()},
   filter:d=>{bankF=d.f;render()},
   del:(d,b)=>{if(!armed(b,'Tap again to delete'))return;S.custom=S.custom.filter(c=>c.id!==d.id);delete S.words[d.id];rebuildCustom();save();render()},
-  add:()=>{
-    const w=$('#nw-w').value.trim(),vi=$('#nw-vi').value.trim();
-    if(!w||!vi){toast('Add both the English word and its Vietnamese meaning.');return}
+  add:async(d,b)=>{
+    clearTimeout(fillTimer);
+    const w=$('#nw-w').value.trim();
+    if(!w){toast('Type the English word first.');return}
+    if(fillBusy&&fillBusy.w===w){if(b)b.disabled=true;await fillBusy.p;if(b&&b.isConnected)b.disabled=false}
+    else if(!$('#nw-vi').value.trim()||draft.autoFor!==w&&draft.autoVi){
+      if(b){b.disabled=true;b.textContent='Translating…'}
+      await fillWord(w,{force:true,quiet:true});
+      if(b&&b.isConnected){b.disabled=false;b.textContent='Save word'}
+    }
+    if(!$('#nw-w')||$('#nw-w').value.trim()!==w)return;
+    const vi=$('#nw-vi').value.trim();
+    if(!vi){toast('Couldn’t translate "'+w+'". Type the Vietnamese meaning yourself, then tap Save word.');$('#nw-vi').focus();return}
     const id='mine/'+slug(w)+'-'+Date.now().toString(36);
     S.custom.push({id,w,vi,ipa:$('#nw-ipa').value.trim().replace(/^\/|\/$/g,''),type:(draft.type||'').trim(),ex:$('#nw-ex').value.trim(),emo:''});
     draft={w:'',vi:'',ipa:'',ex:'',type:''};addOpen=true;
     rebuildCustom();save();toast('Saved "'+w+'" to My Words.');render();
   },
-  ai:async(d,b)=>{
+  ai:async()=>{
     const w=($('#nw-w')?.value||'').trim();if(!w){toast('Type the English word first.');return}
     if(navigator.onLine===false){toast('You’re offline. Connect to the internet to auto-fill.');return}
-    const ctx=($('#nw-ex')?.value||'').trim();
-    draft.w=w;draft.ex=ctx;
-    b.disabled=true;b.textContent='Filling in…';
-    let r=null,src='',why='',aiErr=null;
-    if(SAMPLE){try{r=await claudeFill(w,ctx);src='ai'}catch(e){why='other'}}
-    if(!r&&aiKey()){try{r=await geminiFill(w,ctx,aiKey());src='ai';aiNote(true)}catch(e){why=(e&&e.kind)||'other';aiErr=e;aiNote(false,e)}}
-    if(!r){try{r=await dictFill(w);src='dict'}catch(e){r=null}}
-    const got=!!(r&&(r.vi||r.ipa||r.ex));
-    if(got){
-      if(r.vi)setField('vi',String(r.vi).trim());
-      if(r.ipa)setField('ipa',String(r.ipa).replace(/^[\/\[]+|[\/\]]+$/g,'').trim());
-      if(r.ex&&!ctx)setField('ex',String(r.ex).trim());
-      draft.type=String(r.type||'').trim().toLowerCase().slice(0,24);
-    }
-    const lead=why?(aiErr?aiProblem(aiErr):'The AI didn’t answer.')+' Free dictionaries filled this in.':'';
-    toast(!got?(aiErr?aiProblem(aiErr)+' ':'')+'Couldn’t find that. Type the meaning yourself.':src==='ai'?'Filled in by AI. Check it, then tap Save word.':lead||'Filled in from free dictionaries. Check the meaning, then tap Save word.');
-    if(b.isConnected){b.disabled=false;b.textContent=aiOn()?'Auto-fill with AI':'Auto-fill'}
+    await fillWord(w,{force:true});
   },
   savekey:async(d,b)=>{
     const k=($('#aikey')?.value||'').replace(/\s+/g,'');
@@ -1230,8 +1294,12 @@ const ACT={
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const f=ACT[b.dataset.act];if(f)f(b.dataset,b)});
 document.addEventListener('input',e=>{
   if(e.target.id==='bq'){bankQ=e.target.value;render()}
-  const nid=e.target.id||'';if(nid.startsWith('nw-')){const k=nid.slice(3);if(k in draft){draft[k]=e.target.value;if(k==='w')draft.type=''}}
+  const nid=e.target.id||'';if(nid.startsWith('nw-')){const k=nid.slice(3);if(k in draft){draft[k]=e.target.value;
+    if(k==='w')queueFill();else draft['auto'+k.charAt(0).toUpperCase()+k.slice(1)]=false}}
   if(e.target.id==='rate'){S.settings.rate=+e.target.value;$('#ratev').textContent=S.settings.rate.toFixed(2)+'×'}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.isComposing&&(e.target.id||'').startsWith('nw-')){e.preventDefault();clearTimeout(fillTimer);e.target.blur();ACT.add({},$('[data-act=add]'))}
 });
 document.addEventListener('change',e=>{
   if(e.target.id==='rate'){save()}
