@@ -534,6 +534,7 @@ function rebuildCustom(){
   S.custom.forEach(c=>{WORDS[c.id]=Object.assign({},c,{topic:'mine'});MINE.ids.push(c.id)});
 }
 rebuildCustom();
+fixStreak();
 function save(){S.updatedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}queueSync();if(view==='settings'&&!sess)refreshCode()}
 
 /* Sync through the Claude account when available, otherwise stay on this device */
@@ -612,8 +613,13 @@ function armed(b,label){
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),Math.max(2600,String(t).length*55))}
 function plural(n,w){return n+' '+w+(n===1?'':'s')}
 function fmtIn(ms){if(ms<H)return plural(Math.max(1,Math.round(ms/MIN)),'minute');if(ms<D)return plural(Math.round(ms/H),'hour');return plural(Math.round(ms/D),'day')}
-function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
-function yesterday(){const d=new Date(Date.now()-D);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+/* Day keys like 2026-10-23 (local time, zero-padded so they sort). */
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function dayKey(ts){return ymd(new Date(ts==null?Date.now():ts))}
+function dayShift(k,n){const p=k.split('-').map(Number);return ymd(new Date(p[0],p[1]-1,p[2]+n,12))}
+function normDay(k){const m=String(k||'').match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):''}
+function today(){return dayKey()}
+function yesterday(){return dayShift(today(),-1)}
 function reRx(w){return new RegExp('(^|[^A-Za-z])('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')(?=[^A-Za-z]|$)','i')}
 function hasBlank(w){return !!w.ex&&reRx(w.w).test(w.ex)}
 function hiEx(w){if(!w.ex)return'';const m=w.ex.match(reRx(w.w));if(!m)return esc(w.ex);const i=m.index+m[1].length;return esc(w.ex.slice(0,i))+'<mark>'+esc(m[2])+'</mark>'+esc(w.ex.slice(i+m[2].length))}
@@ -657,7 +663,7 @@ function mergeProgress(data){
   }
   const have=new Set(S.custom.map(c=>c.id));
   inc.custom.forEach(c=>{if(c&&c.id&&c.w&&!have.has(c.id)){S.custom.push(c);have.add(c.id)}});
-  if((+inc.streak.count||0)>(+S.streak.count||0))S.streak=inc.streak;
+  addDays(Array.isArray(inc.streak.days)&&inc.streak.days.length?inc.streak.days:oldStreakDays(inc.streak));addDays(wordDays(inc.words));S.streak.v=2;syncStreak();
   const tipDone=S.settings.tipDone||inc.settings.tipDone;
   S.settings=Object.assign({},S.settings,inc.settings,{tipDone});
   rebuildCustom();save();
@@ -933,7 +939,34 @@ function isNew(id){return !S.words[id]}
 function dueList(){const now=Date.now();return Object.keys(S.words).filter(id=>WORDS[id]&&!S.words[id].known&&S.words[id].due<=now).sort((a,b)=>S.words[a].due-S.words[b].due)}
 function nextDue(){let m=Infinity;for(const id in S.words){const p=S.words[id];if(WORDS[id]&&!p.known&&p.due<m)m=p.due}return m}
 function levelCounts(){const c=[0,0,0,0,0,0];let k=0;for(const id in S.words){if(!WORDS[id])continue;const p=S.words[id];if(p.known)k++;else c[p.lv]++}return{c,k}}
-function bumpStreak(){const t=today();if(S.streak.day===t)return;S.streak.count=S.streak.day===yesterday()?S.streak.count+1:1;S.streak.day=t}
+/* Streak: the list of days you studied. Progress codes carry it, so two devices combine. */
+function studyDays(){const st=S.streak;if(!Array.isArray(st.days))st.days=[];return st.days}
+function addDays(list){const ds=new Set(studyDays());let n=0;(list||[]).forEach(k=>{k=normDay(k);if(k&&!ds.has(k)){ds.add(k);n++}});if(n)S.streak.days=[...ds].sort().slice(-400);return n}
+function streakCount(){const ds=new Set(studyDays());let k=today(),n=0;if(!ds.has(k))k=dayShift(k,-1);while(ds.has(k)){n++;k=dayShift(k,-1)}return n}
+function syncStreak(){const ds=studyDays();S.streak.count=streakCount();S.streak.day=ds.length?ds[ds.length-1]:''}
+function bumpStreak(){addDays([today()]);syncStreak()}
+function oldStreakDays(st){const out=[],last=normDay(st&&st.day);let k=last;for(let i=0;last&&i<Math.min(+st.count||0,400);i++){out.push(k);k=dayShift(k,-1)}return out}
+/* Study days read back from your words: the day each was learned and the day it was last answered. */
+function wordDays(words){
+  const out=[],now=Date.now();
+  for(const id in words||{}){
+    const p=words[id];if(!p||typeof p!=='object')continue;
+    const added=+p.added||0,due=+p.due||0,lv=+p.lv||1;
+    if(added&&added<=now)out.push(dayKey(added));
+    if(!due||p.known)continue;
+    if(added&&(Math.abs(due-added-H)<5e3||Math.abs(due-added-10*MIN)<5e3))continue; // not answered since it was learned
+    // last answer right: due = answer + interval for its level; wrong: due = answer + 10 minutes
+    const right=due-(IV[lv]||H),wrong=due-10*MIN,from=added?added-5e3:0;
+    const r=right<=now&&right>=from,w=wrong<=now&&wrong>=from;
+    if(r&&(!w||!p.wrong||dayKey(right)===dayKey(wrong)))out.push(dayKey(right)); // a word never missed was last answered right
+    else if(w&&!r)out.push(dayKey(wrong));
+  }
+  return out;
+}
+function fixStreak(){
+  if(!S.streak.v){addDays(oldStreakDays(S.streak));S.streak.v=2}
+  addDays(wordDays(S.words));syncStreak();
+}
 
 /* ============ MAIN SCREENS ============ */
 function render(){
@@ -945,7 +978,7 @@ function render(){
   if(view==='settings')refreshCode();
   if(q){const i=$('#bq');i.focus();i.setSelectionRange(i.value.length,i.value.length)}
 }
-function vHeader(){const st=S.streak.count&&(S.streak.day===today()||S.streak.day===yesterday())?'🔥 '+S.streak.count+'-day streak':'';return`<header class="top"><div class="brand">Conquer Vocab</div><div class="streak">${st}</div></header>`}
+function vHeader(){const n=streakCount(),st=n?'🔥 '+n+'-day streak':'';return`<header class="top"><div class="brand">Conquer Vocab</div><div class="streak">${st}</div></header>`}
 function vHome(){
   const due=dueList().length;const {c,k}=levelCounts();const learned=c.reduce((a,b)=>a+b,0);
   let hero;
@@ -1012,7 +1045,7 @@ function vSettings(){
   <p class="hint">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>: sign in with Google, tap Create API key, then copy it. The key stays on this device and is never part of your progress code. Google may use what you send with a free key to improve its products.</p>
   ${aiKey()?'<p class="hint"><button class="linkbtn" data-act="delkey">Remove key from this device</button></p>':''}
   </div>
-  <div class="sheet"><h2>How reviews work</h2><p class="hint" style="margin-top:0">Every word has 5 levels. A new word starts at Level 1 and comes back for review after 1 hour. Each right answer moves it up a level and spaces out the next review: 1 day, 3 days, 7 days, then 21 days. A wrong answer drops it one level and brings it back in 10 minutes. Most questions make you type the word yourself, from its meaning or from what you hear, so you practice spelling. From Level 3 on, the first-letter hints disappear.</p></div>
+  <div class="sheet"><h2>How reviews work</h2><p class="hint" style="margin-top:0">Every word has 5 levels. A new word starts at Level 1 and comes back for review after 1 hour. Each right answer moves it up a level and spaces out the next review: 1 day, 3 days, 7 days, then 21 days. A wrong answer drops it one level and brings it back in 10 minutes. Most questions make you type the word yourself, from its meaning or from what you hear, so you practice spelling. From Level 3 on, the first-letter hints disappear.</p><p class="hint">Your streak counts every day you answer at least one question, even if you stop partway through a session.</p></div>
   <div class="sheet"><h2>Move your progress</h2>
   <p class="hint" style="margin-top:0">Copy your progress code here, then paste it into Conquer Vocab on another phone, computer or link. Your levels, your own words and your settings come along.</p>
   <div class="btns"><button class="btn btn-primary" id="copybtn" data-act="copycode">Copy progress code</button></div>
@@ -1161,6 +1194,7 @@ function answer(ok,note){
     else{p.lv=Math.max(1,p.lv-1);p.due=Date.now()+10*MIN;p.wrong=(p.wrong||0)+1}
     save();
   }else if(!ok)sess.missed[st.id]=true;
+  if(!studyDays().includes(today())){bumpStreak();save()} // counts even if you stop partway through
   const fb=$('#fb');const f=$('.foot');if(f)f.remove();
   fb.className='fb '+(ok?'ok':'bad');
   fb.innerHTML=`<div class="in2"><div class="vt">${ok?pick(['Correct!','Nice one!','Nailed it!','Spot on!']):'Not quite'}</div>${note?`<div style="margin-bottom:6px">${note}</div>`:''}
